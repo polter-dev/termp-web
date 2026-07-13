@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="./fonts/jetbrains-mono.css">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #050506; overflow: hidden; }
+  body { font-family: 'JetBrains Mono', monospace; }
+  a { color: #8ab8ff; text-decoration: none; }
+  a:hover { color: #c2dbff; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  @keyframes bob { 0%, 100% { transform: translateY(-5px); } 50% { transform: translateY(5px); } }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideup { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slidedown { from { opacity: 0; transform: translateY(-22px); } to { opacity: 1; transform: translateY(0); } }
+  textarea::placeholder { color: #3c3c44; }
+</style>
+</helmet>
+<div style="position: fixed; inset: 0; background: #050506; overflow: hidden;" data-screen-label="termp landing">
+  <sc-if value="{{ showIntro }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="intro" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 44px; transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.5, 0, 0.6, 1); opacity: {{ introOp }}; transform: {{ introTf }};">
+      <div style="position: relative; width: 164px; height: 164px; animation: bob 3.2s ease-in-out infinite;">
+        <div style="position: absolute; inset: -18px; border-radius: 50%; background: conic-gradient(#2e5bff, #a821ff, #ff1fc8, #ff4d00, #ffe600, #ffffff, #00ffe1, #00a8ff, #2e5bff); filter: blur(26px); opacity: {{ glowOp }}; animation: spin {{ ringDur }} linear infinite;"></div>
+        <div style="position: absolute; inset: -5px; border-radius: 50%; background: conic-gradient(#2e5bff, #a821ff, #ff1fc8, #ff4d00, #ffe600, #ffffff, #00ffe1, #00a8ff, #2e5bff); mask: radial-gradient(closest-side, transparent calc(100% - 5px), #000 calc(100% - 4px)); animation: spin {{ ringDur }} linear infinite;"></div>
+        <div style="position: absolute; inset: -5px; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,1) 26deg, transparent 78deg); mask: radial-gradient(closest-side, transparent calc(100% - 7px), #000 calc(100% - 6px)); filter: blur(3px); animation: spin 3.4s linear infinite;"></div>
+        <button onClick="{{ begin }}" style="position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(150deg, #26262c, #0e0e12); border: 1px solid #34343c; box-shadow: inset 0 2px 1px rgba(255,255,255,0.1), inset 0 -10px 22px rgba(0,0,0,0.6), 0 16px 44px rgba(0,0,0,0.85); color: #f2f2f6; font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 500; cursor: pointer; overflow: hidden; transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, color 0.25s ease;" style-hover="transform: scale(1.12); border-color: #50505c; color: #ffffff;" style-active="transform: scale(0.92);" style-before="content: ''; position: absolute; left: 14%; right: 14%; top: 5%; height: 42%; border-radius: 50%; background: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0)); pointer-events: none;">&gt;_</button>
+      </div>
+      <div style="color: #5c5c66; font-size: 15px; letter-spacing: 0.04em;">$ termp start<span style="display: inline-block; width: 9px; height: 18px; background: #8a8a94; margin-left: 8px; vertical-align: -2px; animation: blink 1.1s steps(1) infinite;"></span></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showDead }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="terminal content" onWheel="{{ wheelSel }}" style="position: absolute; inset: 0; background: #050506; display: flex; flex-direction: column; animation: fadeup 0.6s ease both;">
+      <div style="height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 18px; background: #0e0e11; border-bottom: 1px solid #1a1a1f;">
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
+        <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
+        <span style="flex: 1; text-align: center; color: #55555e; font-size: 12px;">termp — zsh</span>
+        <button onClick="{{ replay }}" style="background: none; border: none; color: #45454e; font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: color 0.2s;" style-hover="color: #b8b8c2;">↻ replay</button>
+      </div>
+      <div style="flex: 1; max-width: 860px; width: 100%; margin: 0 auto; padding: 48px 40px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.7; box-sizing: border-box; overflow: hidden;">
+        <span style="color: #7a7a86;"><span style="color: #4c8a5c;">poltersh@dev</span> ~ % termp info</span>
+        <div style="display: flex; flex-direction: column; gap: 3px; margin: 14px 0;">
+          <div onClick="{{ sel0 }}" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg0 }}; color: {{ fg0 }};"><span>[1]</span><span>what-it-is</span></div>
+          <div onClick="{{ sel1 }}" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg1 }}; color: {{ fg1 }};"><span>[2]</span><span>how-it-works</span></div>
+          <div onClick="{{ sel2 }}" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg2 }}; color: {{ fg2 }};"><span>[3]</span><span>install</span></div>
+          <div onClick="{{ sel3 }}" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg3 }}; color: {{ fg3 }};"><span>[4]</span><span>leave-feedback</span></div>
+          <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.2s, color 0.2s; background: transparent; color: #7a7a86;" style-hover="background: #0e0e11; color: #c8c8d2;"><span>[5]</span><span>source -&gt;</span></a>
+        </div>
+        <div style="flex: 1; border-top: 1px solid #16161a; padding-top: 22px;">
+          <sc-if value="{{ isSel0 }}" hint-placeholder-val="{{ true }}">
+            <div style="animation: {{ contentAnim }}; color: #8a8a94; font-size: 14px; line-height: 1.85; max-width: 640px;">
+              <span style="color: #b8b8c2;">termp</span> shows what you're running in your terminal as Discord Rich Presence — like "playing a game", but it's Claude Code, vim, or lazygit. 48 tools detected out of the box, custom ones via config. Logo, elapsed timer, optional cwd.
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSel1 }}" hint-placeholder-val="{{ false }}">
+            <div style="animation: {{ contentAnim }}; color: #8a8a94; font-size: 14px; line-height: 1.85; display: flex; flex-direction: column; gap: 5px;">
+              <span>├─ a small Go daemon scans your processes</span>
+              <span>├─ matches them against a tool registry (config.toml, hot reload)</span>
+              <span>├─ picks one headliner, lists the rest as "also:"</span>
+              <span>└─ sends the payload to Discord over local IPC</span>
+              <span style="margin-top: 10px; color: #55555e;">no bot token · no telemetry · nothing leaves your machine</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSel2 }}" hint-placeholder-val="{{ false }}">
+            <div style="animation: {{ contentAnim }}; color: #8a8a94; font-size: 14px; line-height: 1.9; display: flex; flex-direction: column; gap: 14px; max-width: 560px;">
+              <div style="display: flex; flex-direction: column;"><span style="color: #55555e;"># macOS</span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">brew install polter-dev/tap/termp</span><span style="display: inline-block; width: 8px; height: 15px; background: #3c3c44; margin-left: 8px; vertical-align: -2px; animation: blink 1.1s steps(1) infinite;"></span></span><button onClick="{{ copyMac }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyMacLabel }}</button></span></div>
+              <div style="display: flex; flex-direction: column;"><span style="color: #55555e;"># linux</span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">curl -fsSL https://raw.githubusercontent.com/polter-dev/discord_terminal_presence/main/install.sh | sh</span></span><button onClick="{{ copyLinux }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyLinuxLabel }}</button></span></div>
+              <div style="display: flex; flex-direction: column;"><span style="color: #55555e;"># windows</span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">&gt; <span style="color: #c8c8d2;">go install github.com/polter-dev/discord_terminal_presence/cmd/termp@latest</span></span><button onClick="{{ copyWindows }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyWindowsLabel }}</button></span></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSel3 }}" hint-placeholder-val="{{ false }}">
+            <div style="animation: {{ contentAnim }}; display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
+              <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
+                <span style="color: #55555e; font-size: 13px;"># tell me what you think — bugs, ideas, tools i should detect</span>
+                <textarea value="{{ feedbackText }}" onChange="{{ typeFeedback }}" placeholder="type here..." rows="5" style="background: #0c0c0f; border: 1px solid #1e1e24; border-radius: 6px; padding: 12px 14px; color: #c8c8d2; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; resize: vertical; outline: none;"></textarea>
+                <button onClick="{{ sendFeedback }}" style="align-self: flex-start; background: #e8e8ee; border: none; border-radius: 6px; color: #0a0a0c; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; padding: 8px 20px; cursor: pointer; transition: transform 0.2s, opacity 0.2s;" style-hover="transform: translateY(-1px);" style-active="transform: translateY(1px);">send ⏎</button>
+              </sc-if>
+              <sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
+                <span style="color: #4c8a5c; font-size: 14px;">✓ sent — thanks for the feedback</span>
+                <button onClick="{{ resetFeedback }}" style="align-self: flex-start; background: none; border: 1px solid #26262c; border-radius: 6px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 6px 14px; cursor: pointer; transition: color 0.2s, border-color 0.2s;" style-hover="color: #b8b8c2; border-color: #3c3c44;">write another</button>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+        <span style="color: #3c3c44; font-size: 12px;">{{ scrollHint }}</span>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;ringSpeed&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 5, &quot;min&quot;: 1.5, &quot;max&quot;: 12, &quot;step&quot;: 0.5, &quot;unit&quot;: &quot;s&quot;, &quot;section&quot;: &quot;Ring&quot;},
+  &quot;glowIntensity&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 0.55, &quot;min&quot;: 0, &quot;max&quot;: 1, &quot;step&quot;: 0.05, &quot;section&quot;: &quot;Ring&quot;},
+  &quot;flareZoom&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 2.4, &quot;min&quot;: 1.2, &quot;max&quot;: 4, &quot;step&quot;: 0.1, &quot;section&quot;: &quot;Transition&quot;}
+}">
+class Component extends DCLogic {
+  state = { stage: 'intro', sel: 0, dir: 1, feedback: '', sent: false, copied: '' };
+
+  begin() {
+    if (this.state.stage !== 'intro') return;
+    this.setState({ stage: 'flare' });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ stage: 'dead' }), 900);
+  }
+
+  replay() {
+    clearTimeout(this._t);
+    this.setState({ stage: 'intro' });
+  }
+
+  goTo(next, dir) {
+    this.setState(s => (next === s.sel ? null : { sel: next, dir }));
+  }
+
+  onWheel(e) {
+    if (e.target && e.target.tagName === 'TEXTAREA') return;
+    const now = Date.now();
+    // Ignore momentum/trailing events while a section change settles
+    if (this._lockUntil && now < this._lockUntil) { this._acc = 0; this._wheelAt = now; return; }
+    // Reset accumulator after a pause — each gesture starts fresh
+    if (now - (this._wheelAt || 0) > 180) this._acc = 0;
+    this._wheelAt = now;
+    this._acc = (this._acc || 0) + e.deltaY;
+    if (Math.abs(this._acc) < 80) return;
+    const dir = this._acc > 0 ? 1 : -1;
+    this._acc = 0;
+    const next = Math.min(3, Math.max(0, this.state.sel + dir));
+    if (next !== this.state.sel) {
+      this._lockUntil = now + 550;
+      this.setState({ sel: next, dir });
+    }
+  }
+
+  onKey(e) {
+    if (this.state.stage !== 'dead') return;
+    if (e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
+    if (e.key === 'ArrowDown' || e.key === 'j') this.goTo(Math.min(3, this.state.sel + 1), 1);
+    else if (e.key === 'ArrowUp' || e.key === 'k') this.goTo(Math.max(0, this.state.sel - 1), -1);
+    else if (e.key >= '1' && e.key <= '4') this.goTo(Number(e.key) - 1, Number(e.key) - 1 > this.state.sel ? 1 : -1);
+  }
+
+  componentDidMount() {
+    this._onKey = (e) => this.onKey(e);
+    window.addEventListener('keydown', this._onKey);
+  }
+
+  copyCommand(which, command) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(command).catch(() => {});
+      }
+    } catch (e) {
+    }
+    this.setState({ copied: which });
+    clearTimeout(this._copyT);
+    this._copyT = setTimeout(() => this.setState({ copied: '' }), 1200);
+  }
+
+  componentWillUnmount() {
+    clearTimeout(this._t);
+    clearTimeout(this._copyT);
+    if (this._onKey) window.removeEventListener('keydown', this._onKey);
+  }
+
+  renderVals() {
+    const st = this.state.stage;
+    const vals = {
+      showIntro: st !== 'dead',
+      showDead: st === 'dead',
+      introOp: st === 'flare' ? 0 : 1,
+      introTf: st === 'flare' ? 'scale(' + (this.props.flareZoom ?? 2.4) + ')' : 'none',
+      ringDur: (this.props.ringSpeed ?? 5) + 's',
+      glowOp: this.props.glowIntensity ?? 0.55,
+      begin: () => this.begin(),
+      replay: () => this.replay(),
+      wheelSel: (e) => this.onWheel(e),
+      contentAnim: (this.state.dir >= 0 ? 'slideup' : 'slidedown') + ' 0.45s cubic-bezier(0.22, 1, 0.36, 1) both',
+      scrollHint: 'scroll, click a row, or use ↑/↓ · ' + (this.state.sel + 1) + '/4',
+      feedbackText: this.state.feedback,
+      typeFeedback: (e) => this.setState({ feedback: e.target.value }),
+      sendFeedback: () => this.setState({ sent: true }),
+      resetFeedback: () => this.setState({ sent: false, feedback: '' }),
+      sent: this.state.sent,
+      notSent: !this.state.sent,
+      copyMac: () => this.copyCommand('mac', 'brew install polter-dev/tap/termp'),
+      copyLinux: () => this.copyCommand('linux', 'curl -fsSL https://raw.githubusercontent.com/polter-dev/discord_terminal_presence/main/install.sh | sh'),
+      copyWindows: () => this.copyCommand('windows', 'go install github.com/polter-dev/discord_terminal_presence/cmd/termp@latest'),
+      copyMacLabel: this.state.copied === 'mac' ? 'copied ✓' : 'copy',
+      copyLinuxLabel: this.state.copied === 'linux' ? 'copied ✓' : 'copy',
+      copyWindowsLabel: this.state.copied === 'windows' ? 'copied ✓' : 'copy',
+    };
+    for (let i = 0; i < 4; i++) {
+      vals['sel' + i] = () => this.goTo(i, i > this.state.sel ? 1 : -1);
+      vals['isSel' + i] = this.state.sel === i;
+      vals['bg' + i] = this.state.sel === i ? '#e8e8ee' : 'transparent';
+      vals['fg' + i] = this.state.sel === i ? '#0a0a0c' : '#7a7a86';
+    }
+    return vals;
+  }
+}
+</script>
+</body>
+</html>
