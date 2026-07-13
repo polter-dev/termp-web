@@ -1,9 +1,13 @@
 name = "termp-web"
-pages_build_output_dir = "public"
+main = "src/index.js"
 compatibility_date = "2024-11-01"
 
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
 # Store production credentials with:
-# npx wrangler pages secret put RESEND_API_KEY
+# npx wrangler secret put RESEND_API_KEY
 # For non-secret configuration, an optional example would be:
 # [vars]
 # CONTACT_TO_EMAIL = "contact@example.com"

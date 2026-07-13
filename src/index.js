@@ -4,7 +4,7 @@ const json = (body, status = 200) =>
     headers: { "Content-Type": "application/json; charset=utf-8" }
   });
 
-export async function onRequestPost({ request, env }) {
+async function handleContactPost(request, env) {
   let body;
 
   try {
@@ -78,17 +78,29 @@ export async function onRequestPost({ request, env }) {
   return json({ ok: true });
 }
 
-export function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Allow": "POST, OPTIONS"
-    }
-  });
-}
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
 
-export function onRequest() {
-  return json({ ok: false, error: "Method not allowed." }, 405);
-}
+    if (url.pathname === "/api/contact") {
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Allow": "POST, OPTIONS"
+          }
+        });
+      }
+
+      if (request.method === "POST") {
+        return handleContactPost(request, env);
+      }
+
+      return json({ ok: false, error: "Method not allowed." }, 405);
+    }
+
+    return env.ASSETS.fetch(request);
+  }
+};
