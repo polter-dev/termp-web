@@ -98,7 +98,35 @@ async function verifyTurnstile(token, secret) {
   }
 }
 
-async function handleFeedbackPost(request, env) {
+function discordFeedbackContent(category, message, email) {
+  const categoryLine = `category: ${(category || "uncategorized").slice(0, 100)}`;
+  const messagePrefix = "\nmessage: ";
+  const emailLine = email ? `\nemail: ${email.slice(0, 320)}` : "";
+  const messageLimit = Math.max(0, 2000 - categoryLine.length - messagePrefix.length - emailLine.length);
+
+  return categoryLine + messagePrefix + message.slice(0, messageLimit) + emailLine;
+}
+
+async function postFeedbackToDiscord(webhookUrl, category, message, email) {
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: discordFeedbackContent(category, message, email),
+        allowed_mentions: { parse: [] }
+      })
+    });
+
+    if (!response.ok) {
+      console.error(`Discord feedback webhook returned HTTP ${response.status}.`);
+    }
+  } catch {
+    console.error("Discord feedback webhook request failed.");
+  }
+}
+
+async function handleFeedbackPost(request, env, ctx) {
   let body;
 
   try {
@@ -162,6 +190,14 @@ async function handleFeedbackPost(request, env) {
     return json({ ok: false, error: "Feedback could not be saved. Please try again." }, 502);
   }
 
+  const discordWebhookUrl = env.DISCORD_WEBHOOK_URL;
+
+  if (discordWebhookUrl) {
+    ctx.waitUntil(postFeedbackToDiscord(discordWebhookUrl, cleanCategory, cleanMessage, cleanEmail));
+  } else {
+    console.warn("Discord webhook skipped; DISCORD_WEBHOOK_URL is not configured.");
+  }
+
   return json({ ok: true });
 }
 
@@ -201,7 +237,7 @@ export default {
       }
 
       if (request.method === "POST") {
-        return handleFeedbackPost(request, env);
+        return handleFeedbackPost(request, env, ctx);
       }
 
       return json({ ok: false, error: "Method not allowed." }, 405);
