@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <script src="./support.js"></script>
 </head>
 <body>
@@ -26,6 +30,7 @@
 <div style="position: fixed; inset: 0; background: #050506; overflow: hidden;" data-screen-label="termp landing">
   <sc-if value="{{ showIntro }}" hint-placeholder-val="{{ true }}">
     <div data-screen-label="intro" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 44px; transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.5, 0, 0.6, 1); opacity: {{ introOp }}; transform: {{ introTf }};">
+      <img src="/termp-wordmark.svg" alt="termp" style="position: absolute; top: clamp(18px, 4vw, 32px); left: clamp(18px, 4vw, 40px); width: clamp(92px, 12vw, 116px); height: auto; opacity: 0.72; pointer-events: none;">
       <div style="position: relative; width: 164px; height: 164px; animation: bob 3.2s ease-in-out infinite;">
         <div style="position: absolute; inset: -18px; border-radius: 50%; background: conic-gradient(#2e5bff, #a821ff, #ff1fc8, #ff4d00, #ffe600, #ffffff, #00ffe1, #00a8ff, #2e5bff); filter: blur(26px); opacity: {{ glowOp }}; animation: spin {{ ringDur }} linear infinite;"></div>
         <div style="position: absolute; inset: -5px; border-radius: 50%; background: conic-gradient(#2e5bff, #a821ff, #ff1fc8, #ff4d00, #ffe600, #ffffff, #00ffe1, #00a8ff, #2e5bff); mask: radial-gradient(closest-side, transparent calc(100% - 5px), #000 calc(100% - 4px)); animation: spin {{ ringDur }} linear infinite;"></div>
