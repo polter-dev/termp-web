@@ -6,6 +6,18 @@ compatibility_date = "2024-11-01"
 directory = "./public"
 binding = "ASSETS"
 
+[[d1_databases]]
+binding = "termp_feedback"
+database_name = "termp-feedback"
+database_id = "a922d9e3-d0b1-4bb0-a728-5d98ff9584d1"
+
+[[ratelimits]]
+name = "FEEDBACK_LIMITER"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
 # Store production credentials with:
 # npx wrangler secret put RESEND_API_KEY
 # For non-secret configuration, an optional example would be:
