@@ -130,7 +130,10 @@ async function handleFeedbackPost(request, env) {
     return json({ ok: false, error: "Message must be 5000 characters or fewer." }, 400);
   }
 
-  const { success } = await env.FEEDBACK_LIMITER.limit({ key: "feedback" });
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  // Windows are only 10 or 60 seconds; counters are per Cloudflare location,
+  // eventually consistent, and intentionally not an accurate accounting system.
+  const { success } = await env.FEEDBACK_LIMITER.limit({ key: ip });
 
   if (!success) {
     return json({ ok: false, error: "Too many feedback submissions. Please try again later." }, 429);
