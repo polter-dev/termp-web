@@ -98,22 +98,20 @@ async function verifyTurnstile(token, secret) {
   }
 }
 
-function discordFeedbackContent(category, message, email) {
-  const categoryLine = `category: ${(category || "uncategorized").slice(0, 100)}`;
-  const messagePrefix = "\nmessage: ";
+function discordFeedbackContent(message, email) {
   const emailLine = email ? `\nemail: ${email.slice(0, 320)}` : "";
-  const messageLimit = Math.max(0, 2000 - categoryLine.length - messagePrefix.length - emailLine.length);
+  const messageLimit = Math.max(0, 2000 - emailLine.length);
 
-  return categoryLine + messagePrefix + message.slice(0, messageLimit) + emailLine;
+  return message.slice(0, messageLimit) + emailLine;
 }
 
-async function postFeedbackToDiscord(webhookUrl, category, message, email) {
+async function postFeedbackToDiscord(webhookUrl, message, email) {
   try {
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        content: discordFeedbackContent(category, message, email),
+        content: discordFeedbackContent(message, email),
         allowed_mentions: { parse: [] }
       })
     });
@@ -193,7 +191,7 @@ async function handleFeedbackPost(request, env, ctx) {
   const discordWebhookUrl = env.DISCORD_WEBHOOK_URL;
 
   if (discordWebhookUrl) {
-    ctx.waitUntil(postFeedbackToDiscord(discordWebhookUrl, cleanCategory, cleanMessage, cleanEmail));
+    ctx.waitUntil(postFeedbackToDiscord(discordWebhookUrl, cleanMessage, cleanEmail));
   } else {
     console.warn("Discord webhook skipped; DISCORD_WEBHOOK_URL is not configured.");
   }
