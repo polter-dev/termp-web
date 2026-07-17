@@ -153,8 +153,17 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this._onKey = (e) => this.onKey(e);
+    this._onHashChange = () => this.openFeedbackHash();
     window.addEventListener('keydown', this._onKey);
+    window.addEventListener('hashchange', this._onHashChange);
+    this.openFeedbackHash();
     this.ensureTurnstile();
+  }
+
+  openFeedbackHash() {
+    if (location.hash === '#feedback' || location.hash === '#feedback-turnstile') {
+      this.setState({ stage: 'dead', sel: 3, dir: 1 });
+    }
   }
 
   componentDidUpdate() {
@@ -293,6 +302,7 @@ class Component extends DCLogic {
     clearTimeout(this._copyT);
     clearInterval(this._turnstilePoll);
     if (this._onKey) window.removeEventListener('keydown', this._onKey);
+    if (this._onHashChange) window.removeEventListener('hashchange', this._onHashChange);
   }
 
   renderVals() {
