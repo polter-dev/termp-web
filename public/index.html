@@ -80,36 +80,37 @@
               <span style="color: #b8b8c2;">termp</span> shows what you're running in your terminal as Discord Rich Presence — like "playing a game", but it's Claude Code, vim, or lazygit. 48 tools detected out of the box, custom ones via config. Logo, elapsed timer, optional cwd.
             </div>
             <div style="animation: {{ contentAnim }}; margin: 24px auto 0; width: 100%; max-width: 640px; display: flex; align-items: stretch; justify-content: center; flex-wrap: wrap; gap: 12px; box-sizing: border-box;">
-              <div style="flex: 1 1 360px; min-width: 0; max-width: 440px; padding: 15px 16px 16px; background: #111214; border: 1px solid #292a30; border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,0.34); box-sizing: border-box; overflow: hidden;">
-                <div style="color: #949ba4; font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;">Playing a game</div>
-                <div style="margin-top: 11px; display: flex; align-items: center; gap: 14px; min-width: 0;">
-                  <div style="position: relative; width: 86px; height: 86px; flex-shrink: 0;">
-                    <img src="{{ activeLogo }}" alt="{{ activeName }}" style="display: block; width: 86px; height: 86px; object-fit: contain; border-radius: 14px; background: {{ activeBg }};">
-                    <span aria-hidden="true" style="position: absolute; right: -5px; bottom: -5px; width: 30px; height: 30px; padding: 3px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 4px solid #111214; border-radius: 50%; background: {{ cornerBg }}; overflow: hidden;"><img src="{{ cornerLogo }}" alt="" style="display: block; width: 100%; height: 100%; object-fit: contain;"></span>
+              <div style="position: relative; flex: 1 1 360px; min-width: 0; max-width: 440px; padding: 19px 20px 22px; background: #111214; border: 1px solid #292a30; border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,0.34); box-sizing: border-box; overflow: hidden;">
+                <div style="color: #b5bac1; font-family: Arial, sans-serif; font-size: 13px; font-weight: 600; line-height: 1.2;">Playing</div>
+                <span aria-hidden="true" style="position: absolute; top: 16px; right: 18px; color: #949ba4; font-family: Arial, sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; line-height: 1;">•••</span>
+                <div style="margin-top: 17px; display: flex; align-items: center; gap: 22px; min-width: 0;">
+                  <div style="position: relative; width: 96px; height: 96px; flex-shrink: 0;">
+                    <img src="{{ activeLogo }}" alt="{{ activeName }}" style="display: block; width: 96px; height: 96px; object-fit: contain;">
+                    <span aria-hidden="true" style="position: absolute; right: -5px; bottom: -5px; width: 32px; height: 32px; padding: 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 4px solid #111214; border-radius: 50%; background: #1e1f22; overflow: hidden;"><img src="{{ cornerLogo }}" alt="" style="display: block; width: 100%; height: 100%; object-fit: contain;"></span>
                   </div>
-                  <div style="min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; overflow-wrap: anywhere;">
-                    <div style="color: #f2f3f5; font-family: Arial, sans-serif; font-size: clamp(15px, 3vw, 18px); font-weight: 700; line-height: 1.25;">Using {{ activeName }}</div>
-                    <div style="color: #b5bac1; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.3;">also: {{ alsoList }}</div>
-                    <div style="margin-top: 5px; display: inline-flex; align-items: center; gap: 6px; color: #23A55A; font-family: Arial, sans-serif; font-size: 12px; font-weight: 600; line-height: 1;">
+                  <div style="min-width: 0; display: flex; flex-direction: column; align-items: flex-start; overflow-wrap: anywhere;">
+                    <div style="color: #f2f3f5; font-family: Arial, sans-serif; font-size: 19px; font-weight: 700; line-height: 1.2;">{{ activeName }}</div>
+                    <div style="margin-top: 4px; color: #b5bac1; font-family: Arial, sans-serif; font-size: 14px; font-weight: 400; line-height: 1.3;">Using {{ activeName }}</div>
+                    <div style="margin-top: 9px; display: inline-flex; align-items: center; gap: 6px; color: #23A55A; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; line-height: 1;">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="display: block; fill: currentColor; flex-shrink: 0;"><path d="M7.5 6h9c2.2 0 3.9 1.5 4.4 3.6l1 4.5c.5 2.2-1.2 4.3-3.4 4.3-.9 0-1.8-.4-2.4-1.1l-1.4-1.6H9.3l-1.4 1.6c-.6.7-1.5 1.1-2.4 1.1-2.2 0-3.9-2.1-3.4-4.3l1-4.5C3.6 7.5 5.3 6 7.5 6Zm-.3 3.1v1.8H5.4v1.8h1.8v1.8H9v-1.8h1.8v-1.8H9V9.1H7.2Zm9.6 1.1a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Zm-2.3 2.3a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z"></path></svg>
                       <span>{{ elapsedLabel }}</span>
                     </div>
+                    <div style="margin-top: 8px; color: #6d6f78; font-family: Arial, sans-serif; font-size: 11px; line-height: 1.3;">also: {{ alsoList }}</div>
                   </div>
                 </div>
               </div>
-              <div style="flex: 0 1 172px; min-width: 146px; padding: 13px; display: flex; flex-direction: column; justify-content: center; gap: 9px; background: #0e0e11; border: 1px solid #202026; border-radius: 12px; box-sizing: border-box;">
+              <div style="flex: 0 1 172px; min-width: 146px; padding: 14px 13px; display: flex; flex-direction: column; justify-content: center; gap: 9px; background: #0e0e11; border: 1px solid #202026; border-radius: 12px; box-sizing: border-box;">
                 <div style="color: #55555e; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;">switches with you</div>
-                <div style="color: #45454e; font-size: 9px; line-height: 1;">click to preview</div>
-                <div onClick="{{ setTool0 }}" onKeyDown="{{ tool0Key }}" tabindex="0" role="button" aria-label="{{ tool0Aria }}" aria-pressed="{{ tool0Active }}" style="display: flex; align-items: center; gap: 10px; padding: 7px; cursor: pointer; background: {{ tool0Surface }}; border: 1px solid {{ tool0Border }}; border-radius: 8px; opacity: {{ tool0Op }}; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;" style-hover="opacity: 1; background: #17171b; border-color: #2c2c33;">
-                  <img src="{{ tool0Logo }}" alt="" aria-hidden="true" style="width: 30px; height: 30px; object-fit: contain; border-radius: 7px; flex-shrink: 0; background: {{ tool0Bg }};">
+                <div onClick="{{ setTool0 }}" onKeyDown="{{ tool0Key }}" tabindex="0" role="button" aria-label="{{ tool0Aria }}" aria-pressed="{{ tool0Active }}" style="display: flex; align-items: center; gap: 10px; padding: 7px; cursor: pointer; background: {{ tool0Surface }}; border: 1px solid {{ tool0Border }}; border-radius: 8px; opacity: {{ tool0Op }}; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;" style-hover="opacity: 1; background: #1e1f23; border-color: #3f4148;">
+                  <span aria-hidden="true" style="width: 32px; height: 32px; padding: 5px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 7px; flex-shrink: 0; background: #1e1f22;"><img src="{{ tool0Logo }}" alt="" style="display: block; width: 100%; height: 100%; object-fit: contain;"></span>
                   <span style="min-width: 0; color: {{ tool0Fg }}; font-size: 11px; overflow-wrap: anywhere;">{{ tool0Name }}</span>
                 </div>
-                <div onClick="{{ setTool1 }}" onKeyDown="{{ tool1Key }}" tabindex="0" role="button" aria-label="{{ tool1Aria }}" aria-pressed="{{ tool1Active }}" style="display: flex; align-items: center; gap: 10px; padding: 7px; cursor: pointer; background: {{ tool1Surface }}; border: 1px solid {{ tool1Border }}; border-radius: 8px; opacity: {{ tool1Op }}; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;" style-hover="opacity: 1; background: #17171b; border-color: #2c2c33;">
-                  <img src="{{ tool1Logo }}" alt="" aria-hidden="true" style="width: 30px; height: 30px; object-fit: contain; border-radius: 7px; flex-shrink: 0; background: {{ tool1Bg }};">
+                <div onClick="{{ setTool1 }}" onKeyDown="{{ tool1Key }}" tabindex="0" role="button" aria-label="{{ tool1Aria }}" aria-pressed="{{ tool1Active }}" style="display: flex; align-items: center; gap: 10px; padding: 7px; cursor: pointer; background: {{ tool1Surface }}; border: 1px solid {{ tool1Border }}; border-radius: 8px; opacity: {{ tool1Op }}; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;" style-hover="opacity: 1; background: #1e1f23; border-color: #3f4148;">
+                  <span aria-hidden="true" style="width: 32px; height: 32px; padding: 5px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 7px; flex-shrink: 0; background: #1e1f22;"><img src="{{ tool1Logo }}" alt="" style="display: block; width: 100%; height: 100%; object-fit: contain;"></span>
                   <span style="min-width: 0; color: {{ tool1Fg }}; font-size: 11px; overflow-wrap: anywhere;">{{ tool1Name }}</span>
                 </div>
-                <div onClick="{{ setTool2 }}" onKeyDown="{{ tool2Key }}" tabindex="0" role="button" aria-label="{{ tool2Aria }}" aria-pressed="{{ tool2Active }}" style="display: flex; align-items: center; gap: 10px; padding: 7px; cursor: pointer; background: {{ tool2Surface }}; border: 1px solid {{ tool2Border }}; border-radius: 8px; opacity: {{ tool2Op }}; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;" style-hover="opacity: 1; background: #17171b; border-color: #2c2c33;">
-                  <img src="{{ tool2Logo }}" alt="" aria-hidden="true" style="width: 30px; height: 30px; object-fit: contain; border-radius: 7px; flex-shrink: 0; background: {{ tool2Bg }};">
+                <div onClick="{{ setTool2 }}" onKeyDown="{{ tool2Key }}" tabindex="0" role="button" aria-label="{{ tool2Aria }}" aria-pressed="{{ tool2Active }}" style="display: flex; align-items: center; gap: 10px; padding: 7px; cursor: pointer; background: {{ tool2Surface }}; border: 1px solid {{ tool2Border }}; border-radius: 8px; opacity: {{ tool2Op }}; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;" style-hover="opacity: 1; background: #1e1f23; border-color: #3f4148;">
+                  <span aria-hidden="true" style="width: 32px; height: 32px; padding: 5px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 7px; flex-shrink: 0; background: #1e1f22;"><img src="{{ tool2Logo }}" alt="" style="display: block; width: 100%; height: 100%; object-fit: contain;"></span>
                   <span style="min-width: 0; color: {{ tool2Fg }}; font-size: 11px; overflow-wrap: anywhere;">{{ tool2Name }}</span>
                 </div>
               </div>
@@ -177,12 +178,12 @@ class Component extends DCLogic {
 
   presenceTools() {
     return [
-      { name: 'Claude Code', slug: 'claude', bg: '#d97757', icon: 'f5f0e8' },
-      { name: 'Neovim', slug: 'neovim', bg: '#57A143', icon: 'ffffff' },
-      { name: 'Git', slug: 'git', bg: '#F03C2E', icon: 'ffffff' }
+      { name: 'Claude Code', slug: 'claude', color: '#d97757' },
+      { name: 'Neovim', slug: 'neovim', color: '#57A143' },
+      { name: 'Git', slug: 'git', color: '#F03C2E' }
     ].map(tool => ({
       ...tool,
-      logo: 'https://wsrv.nl/?url=cdn.simpleicons.org/' + tool.slug + '/' + tool.icon + '&output=png&w=256&h=256'
+      logo: 'https://wsrv.nl/?url=cdn.simpleicons.org/' + tool.slug + '/' + tool.color.slice(1) + '&output=png&w=256&h=256'
     }));
   }
 
@@ -212,9 +213,9 @@ class Component extends DCLogic {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    const paddedMinutes = String(minutes).padStart(2, '0');
     const paddedSeconds = String(seconds).padStart(2, '0');
-    return (hours > 0 ? hours + ':' : '') + paddedMinutes + ':' + paddedSeconds + ' elapsed';
+    if (hours > 0) return hours + ':' + String(minutes).padStart(2, '0') + ':' + paddedSeconds;
+    return minutes + ':' + paddedSeconds;
   }
 
   goTo(next, dir) {
@@ -450,10 +451,8 @@ class Component extends DCLogic {
       replay: () => this.replay(),
       wheelSel: (e) => this.onWheel(e),
       activeLogo: activeTool.logo,
-      activeBg: activeTool.bg,
       activeName: activeTool.name,
       cornerLogo: cornerTool.logo,
-      cornerBg: cornerTool.bg,
       alsoList: tools.filter((_, i) => i !== activeIndex).map(tool => tool.name).join(' · '),
       elapsedLabel: this.formatElapsed(this.state.elapsedSeconds),
       contentAnim: (this.state.dir >= 0 ? 'slideup' : 'slidedown') + ' 0.45s cubic-bezier(0.22, 1, 0.36, 1) both',
@@ -495,14 +494,13 @@ class Component extends DCLogic {
       const tool = tools[i];
       const isActive = activeIndex === i;
       vals['tool' + i + 'Logo'] = tool.logo;
-      vals['tool' + i + 'Bg'] = tool.bg;
       vals['tool' + i + 'Name'] = tool.name;
       vals['tool' + i + 'Aria'] = 'Preview ' + tool.name + ' presence';
       vals['tool' + i + 'Active'] = isActive;
-      vals['tool' + i + 'Op'] = isActive ? 1 : 0.58;
-      vals['tool' + i + 'Surface'] = isActive ? '#17171b' : 'transparent';
-      vals['tool' + i + 'Border'] = isActive ? '#2c2c33' : 'transparent';
-      vals['tool' + i + 'Fg'] = isActive ? '#c8c8d2' : '#8a8a94';
+      vals['tool' + i + 'Op'] = isActive ? 1 : 0.72;
+      vals['tool' + i + 'Surface'] = isActive ? '#1e1f23' : 'transparent';
+      vals['tool' + i + 'Border'] = isActive ? '#3f4148' : 'transparent';
+      vals['tool' + i + 'Fg'] = isActive ? '#dbdee1' : '#949ba4';
       vals['setTool' + i] = () => this.setActiveTool(i);
       vals['tool' + i + 'Key'] = (e) => this.onToolKey(e, i);
     }
