@@ -79,14 +79,39 @@
             <div style="animation: {{ contentAnim }}; color: #8a8a94; font-size: 14px; line-height: 1.85; max-width: 640px;">
               <span style="color: #b8b8c2;">termp</span> shows what you're running in your terminal as Discord Rich Presence — like "playing a game", but it's Claude Code, vim, or lazygit. 48 tools detected out of the box, custom ones via config. Logo, elapsed timer, optional cwd.
             </div>
-            <div style="animation: {{ contentAnim }}; margin-top: 22px; display: flex; align-items: center; gap: 16px; max-width: 320px; padding: 16px; background: #16161a; border: 1px solid #26262c; border-radius: 10px; box-sizing: border-box;">
-              <img src="/discord-app-icon.png" alt="termp" style="width: 60px; height: 60px; border-radius: 12px; flex-shrink: 0;">
-              <div style="min-width: 0; display: flex; flex-direction: column; gap: 2px;">
-                <div style="color: #7a7a86; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;">Playing a game</div>
-                <div style="color: #e8e8ee; font-size: 14px; font-weight: 500;">termp</div>
-                <div style="color: #c8c8d2; font-size: 13px; overflow-wrap: anywhere;">Claude Code</div>
-                <div style="color: #8a8a94; font-size: 12px; overflow-wrap: anywhere;">also: vim · lazygit</div>
-                <div style="color: #55555e; font-size: 12px; margin-top: 2px;">12:34 elapsed</div>
+            <div style="animation: {{ contentAnim }}; margin: 24px auto 0; width: 100%; max-width: 640px; display: flex; align-items: stretch; justify-content: center; flex-wrap: wrap; gap: 12px; box-sizing: border-box;">
+              <div style="flex: 1 1 360px; min-width: 0; max-width: 440px; padding: 15px 16px 16px; background: #111214; border: 1px solid #292a30; border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,0.34); box-sizing: border-box; overflow: hidden;">
+                <div style="color: #949ba4; font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;">Playing a game</div>
+                <div style="margin-top: 11px; display: flex; align-items: center; gap: 14px; min-width: 0;">
+                  <div style="position: relative; width: 86px; height: 86px; flex-shrink: 0;">
+                    <img src="https://wsrv.nl/?url=cdn.simpleicons.org/claude/f5f0e8&amp;output=png&amp;w=256&amp;h=256" alt="Claude Code" style="display: block; width: 86px; height: 86px; object-fit: cover; border-radius: 14px; background: #d97757;">
+                    <span aria-hidden="true" style="position: absolute; right: -5px; bottom: -5px; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; border: 4px solid #111214; border-radius: 50%; background: #24252a; color: #ab93ed; font-size: 11px; font-weight: 700; line-height: 1;">&gt;_</span>
+                  </div>
+                  <div style="min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; overflow-wrap: anywhere;">
+                    <div style="color: #949ba4; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.2;">termp</div>
+                    <div style="color: #f2f3f5; font-family: Arial, sans-serif; font-size: clamp(15px, 3vw, 18px); font-weight: 700; line-height: 1.25;">Using Claude Code</div>
+                    <div style="color: #b5bac1; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.3;">also: Neovim · Git</div>
+                    <div style="margin-top: 5px; display: inline-flex; align-items: center; gap: 6px; color: #23A55A; font-family: Arial, sans-serif; font-size: 12px; font-weight: 600; line-height: 1;">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="display: block; fill: currentColor; flex-shrink: 0;"><path d="M7.5 6h9c2.2 0 3.9 1.5 4.4 3.6l1 4.5c.5 2.2-1.2 4.3-3.4 4.3-.9 0-1.8-.4-2.4-1.1l-1.4-1.6H9.3l-1.4 1.6c-.6.7-1.5 1.1-2.4 1.1-2.2 0-3.9-2.1-3.4-4.3l1-4.5C3.6 7.5 5.3 6 7.5 6Zm-.3 3.1v1.8H5.4v1.8h1.8v1.8H9v-1.8h1.8v-1.8H9V9.1H7.2Zm9.6 1.1a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Zm-2.3 2.3a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z"></path></svg>
+                      <span>00:42 elapsed</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div style="flex: 0 1 172px; min-width: 146px; padding: 13px; display: flex; flex-direction: column; justify-content: center; gap: 9px; background: #0e0e11; border: 1px solid #202026; border-radius: 12px; box-sizing: border-box;">
+                <div style="color: #55555e; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;">switches with you</div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 7px; background: #17171b; border: 1px solid #2c2c33; border-radius: 8px;">
+                  <img src="https://wsrv.nl/?url=cdn.simpleicons.org/claude/f5f0e8&amp;output=png&amp;w=256&amp;h=256" alt="" aria-hidden="true" style="width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0; background: #d97757;">
+                  <span style="min-width: 0; color: #c8c8d2; font-size: 11px; overflow-wrap: anywhere;">Claude Code</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 7px; border: 1px solid transparent; border-radius: 8px; opacity: 0.64;">
+                  <img src="https://wsrv.nl/?url=cdn.simpleicons.org/neovim&amp;output=png&amp;w=256&amp;h=256" alt="" aria-hidden="true" style="width: 30px; height: 30px; object-fit: contain; border-radius: 7px; flex-shrink: 0; background: #151519;">
+                  <span style="min-width: 0; color: #8a8a94; font-size: 11px; overflow-wrap: anywhere;">Neovim</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 7px; border: 1px solid transparent; border-radius: 8px; opacity: 0.48;">
+                  <img src="https://wsrv.nl/?url=cdn.simpleicons.org/git&amp;output=png&amp;w=256&amp;h=256" alt="" aria-hidden="true" style="width: 30px; height: 30px; object-fit: contain; border-radius: 7px; flex-shrink: 0; background: #151519;">
+                  <span style="min-width: 0; color: #8a8a94; font-size: 11px; overflow-wrap: anywhere;">Git</span>
+                </div>
               </div>
             </div>
           </sc-if>
