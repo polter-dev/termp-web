@@ -5,6 +5,7 @@ The termp marketing site and contact-form backend, deployed together as a Cloudf
 ## Layout
 
 - `public/` — static site, local fonts, and vendored browser runtimes
+- `public/logos/` — self-hosted flagship tool logos for Discord Terminal Presence
 - `public/contact.html` — contact form posting to `/api/contact`
 - `src/index.js` — Cloudflare Worker for contact and feedback submissions plus asset fallback
 - `migrations/` — versioned D1 schema migrations
