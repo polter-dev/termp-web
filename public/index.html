@@ -11,12 +11,14 @@
 <meta property="og:title" content="termp — your terminal, as Discord Rich Presence">
 <meta property="og:description" content="termp shows what you're running in your terminal — Claude Code, vim, lazygit — as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
 <meta property="og:url" content="https://termp.polter.sh/">
-<meta property="og:image" content="https://termp.polter.sh/discord-app-icon.png">
+<meta property="og:image" content="https://termp.polter.sh/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="termp — Discord Rich Presence for your terminal">
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="termp — your terminal, as Discord Rich Presence">
 <meta name="twitter:description" content="termp shows what you're running in your terminal — Claude Code, vim, lazygit — as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
-<meta name="twitter:image" content="https://termp.polter.sh/discord-app-icon.png">
+<meta name="twitter:image" content="https://termp.polter.sh/og.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png">
@@ -38,25 +40,33 @@
   @keyframes fadeup { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes slideup { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes slidedown { from { opacity: 0; transform: translateY(-22px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes tool-drift-a { 0% { transform: translate3d(-7px, 5px, 0) rotate(-4deg); opacity: 0.66; } 50% { transform: translate3d(9px, -8px, 0) rotate(3deg); opacity: 0.92; } 100% { transform: translate3d(-2px, -14px, 0) rotate(7deg); opacity: 0.74; } }
+  @keyframes tool-drift-b { 0% { transform: translate3d(6px, -5px, 0) rotate(5deg); opacity: 0.72; } 45% { transform: translate3d(-11px, 7px, 0) rotate(-3deg); opacity: 0.94; } 100% { transform: translate3d(8px, 12px, 0) rotate(-7deg); opacity: 0.68; } }
+  @keyframes tool-drift-c { 0% { transform: translate3d(-4px, -9px, 0) rotate(2deg); opacity: 0.78; } 55% { transform: translate3d(12px, 4px, 0) rotate(8deg); opacity: 0.9; } 100% { transform: translate3d(-9px, 10px, 0) rotate(-5deg); opacity: 0.7; } }
+  @keyframes tool-drift-d { 0% { transform: translate3d(8px, 8px, 0) rotate(-6deg); opacity: 0.7; } 50% { transform: translate3d(-5px, -12px, 0) rotate(2deg); opacity: 0.96; } 100% { transform: translate3d(13px, -3px, 0) rotate(6deg); opacity: 0.76; } }
+  .tool-float { will-change: transform, opacity; animation: var(--motion) var(--duration) ease-in-out var(--delay) infinite alternate; }
+  .tool-name-tile { display: flex; align-items: center; justify-content: center; min-height: 27px; padding: 4px 8px; box-sizing: border-box; border: 1px solid #26262c; border-radius: 6px; background: #111214; box-shadow: 0 7px 18px rgba(0,0,0,0.28); color: #a99bd0; font-size: 10px; line-height: 1.2; white-space: nowrap; }
+  .tool-logo-tile { height: 38px; padding: 6px 9px 6px 7px; box-sizing: border-box; display: flex; align-items: center; gap: 7px; border: 1px solid #292a30; border-radius: 8px; background: #1e1f22; box-shadow: 0 8px 22px rgba(0,0,0,0.34); color: #c8c8d2; font-size: 10px; line-height: 1; white-space: nowrap; }
+  .tool-logo-tile img { display: block; width: 24px; height: 24px; object-fit: contain; }
   textarea::placeholder { color: #3c3c44; }
   :focus-visible { outline: 2px solid #ab93ed; outline-offset: 2px; border-radius: 2px; }
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } .tool-float { animation: none !important; opacity: 0.82; transform: none; will-change: auto; } }
   @media (max-width: 600px) { .term-body { padding: 28px 18px !important; overflow-y: auto !important; } }
 </style>
 </helmet>
 <div style="position: fixed; inset: 0; background: #050506; overflow: hidden;" data-screen-label="termp landing">
   <sc-if value="{{ showIntro }}" hint-placeholder-val="{{ true }}">
-    <div data-screen-label="intro" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 44px; transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.5, 0, 0.6, 1); opacity: {{ introOp }}; transform: {{ introTf }};">
+    <div data-screen-label="intro" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 44px; transition: opacity 0.56s ease, transform 0.64s cubic-bezier(0.5, 0, 0.6, 1); opacity: {{ introOp }}; transform: {{ introTf }};">
       <img src="/termp-wordmark.svg" alt="termp" style="position: absolute; top: clamp(18px, 4vw, 32px); left: clamp(18px, 4vw, 40px); width: clamp(92px, 12vw, 116px); height: auto; opacity: 0.72; pointer-events: none;">
       <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="position: absolute; top: clamp(18px, 4vw, 32px); right: clamp(18px, 4vw, 40px); font-size: 13px; letter-spacing: 0.02em; color: #6e6e78; opacity: 0.85; transition: color 0.2s ease;" style-hover="color: #8ab8ff;">github ↗</a>
       <div style="position: relative; width: 164px; height: 164px; animation: bob 3.2s ease-in-out infinite;">
-        <button onClick="{{ begin }}" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(150deg, #26262c, #0e0e12); border: 1px solid #34343c; box-shadow: 0 0 48px rgba(171,147,237,0.12), 0 14px 36px rgba(0,0,0,0.7); color: #f2f2f6; font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 500; cursor: pointer; overflow: hidden; transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, color 0.25s ease;" style-hover="transform: scale(1.12); border-color: #50505c; color: #ffffff;" style-active="transform: scale(0.92);" style-before="content: ''; position: absolute; left: 14%; right: 14%; top: 5%; height: 42%; border-radius: 50%; background: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0)); pointer-events: none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="68" height="68" aria-label="termp" role="img" style="display: block;"><g transform="rotate(-8 16 16)"><polyline points="9 10 16.5 16 9 22" fill="none" stroke="#ab93ed" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"></polyline><line x1="20" y1="22.5" x2="25.5" y2="21.5" stroke="#e8e8ee" stroke-width="4.2" stroke-linecap="round"></line></g></svg></button>
+        <button onClick="{{ begin }}" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(150deg, #26262c, #0e0e12); border: 1px solid #34343c; box-shadow: 0 0 48px rgba(171,147,237,0.12), 0 14px 36px rgba(0,0,0,0.7); color: #f2f2f6; font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 500; cursor: pointer; overflow: hidden; transition: transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, color 0.25s ease;" style-hover="transform: scale(1.12); border-color: #50505c; color: #ffffff;" style-active="transform: scale(0.92);" style-before="content: ''; position: absolute; left: 14%; right: 14%; top: 5%; height: 42%; border-radius: 50%; background: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0)); pointer-events: none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="68" height="68" aria-label="termp" role="img" style="display: block;"><g transform="rotate(-8 16 16)"><polyline points="9 10 16.5 16 9 22" fill="none" stroke="#ab93ed" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"></polyline><line x1="20" y1="22.5" x2="25.5" y2="21.5" stroke="#e8e8ee" stroke-width="4.2" stroke-linecap="round"></line></g></svg></button>
       </div>
       <div style="color: #5c5c66; font-size: 15px; letter-spacing: 0.04em;">$ termp start<span style="display: inline-block; width: 9px; height: 18px; background: #8a8a94; margin-left: 8px; vertical-align: -2px; animation: blink 1.1s steps(1) infinite;"></span></div>
     </div>
   </sc-if>
   <sc-if value="{{ showDead }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="terminal content" onWheel="{{ wheelSel }}" style="position: absolute; inset: 0; background: #050506; display: flex; flex-direction: column; animation: fadeup 0.6s ease both;">
+    <div data-screen-label="terminal content" onWheel="{{ wheelSel }}" style="position: absolute; inset: 0; background: #050506; display: flex; flex-direction: column; animation: fadeup 0.45s ease both;">
       <div style="height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 18px; background: #0e0e11; border-bottom: 1px solid #1a1a1f;">
         <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
         <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
@@ -72,7 +82,8 @@
           <div onClick="{{ sel1 }}" tabindex="0" role="button" aria-label="how-it-works" data-row="1" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg1 }}; color: {{ fg1 }};"><span>[2]</span><span>how-it-works</span></div>
           <div onClick="{{ sel2 }}" tabindex="0" role="button" aria-label="install" data-row="2" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg2 }}; color: {{ fg2 }};"><span>[3]</span><span>install</span></div>
           <div onClick="{{ sel3 }}" tabindex="0" role="button" aria-label="leave-feedback" data-row="3" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg3 }}; color: {{ fg3 }};"><span>[4]</span><span>leave-feedback</span></div>
-          <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.2s, color 0.2s; background: transparent; color: #7a7a86;" style-hover="background: #0e0e11; color: #c8c8d2;"><span>[5]</span><span>source -&gt;</span></a>
+          <div onClick="{{ sel4 }}" tabindex="0" role="button" aria-label="supported-tools" data-row="4" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg4 }}; color: {{ fg4 }};"><span>[5]</span><span>supported-tools</span></div>
+          <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.2s, color 0.2s; background: transparent; color: #7a7a86;" style-hover="background: #0e0e11; color: #c8c8d2;"><span>[6]</span><span>source -&gt;</span></a>
         </div>
         <div style="flex: 1; border-top: 1px solid #16161a; padding-top: 22px;">
           <sc-if value="{{ isSel0 }}" hint-placeholder-val="{{ true }}">
@@ -134,6 +145,26 @@
               <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px; padding: 14px 16px; background: rgba(171,147,237,0.07); border: 1px solid #3a334d; border-left: 3px solid #ab93ed; border-radius: 7px; box-shadow: 0 10px 28px rgba(0,0,0,0.22);"><span style="color: #e8e8ee; font-size: 13px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere;">One more step — run the setup wizard:</span><span style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1 1 180px; min-width: 0; color: #ab93ed; font-size: 16px; font-weight: 500;">$ <span style="color: #e8e8ee;">termp setup</span></span><button onClick="{{ copySetup }}" style="flex: 0 0 auto; min-width: 76px; background: #e8e8ee; border: 1px solid #e8e8ee; border-radius: 5px; color: #0a0a0c; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; line-height: 1; padding: 7px 12px; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color 0.2s;" style-hover="background: #ffffff; border-color: #ffffff; transform: translateY(-1px);" style-active="transform: translateY(1px);">{{ copySetupLabel }}</button></span></div>
             </div>
           </sc-if>
+          <sc-if value="{{ isSel4 }}" hint-placeholder-val="{{ false }}">
+            <div style="animation: {{ contentAnim }}; display: flex; flex-direction: column; gap: 12px;">
+              <span style="color: #8a8a94; font-size: 14px; line-height: 1.75;"><span style="color: #b8b8c2;">48 tools</span> detected out of the box — and any tool you add.</span>
+              <div role="region" aria-label="supported tools" style="position: relative; width: 100%; height: clamp(250px, 38vh, 350px); overflow: hidden; border: 1px solid #202026; border-radius: 10px; background: radial-gradient(circle at 48% 46%, rgba(171,147,237,0.055), transparent 48%), #0a0a0c; box-sizing: border-box;">
+                <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;">{{ supportedToolNames }}</span>
+                <div aria-hidden="true">
+                  <sc-for list="{{ supportedTools }}" as="tool">
+                    <span class="tool-float" style="{{ tool.tileStyle }}">
+                      <sc-if value="{{ tool.hasLogo }}" hint-placeholder-val="{{ false }}">
+                        <span class="tool-logo-tile"><img src="{{ tool.logo }}" alt=""><span>{{ tool.name }}</span></span>
+                      </sc-if>
+                      <sc-if value="{{ tool.hasNoLogo }}" hint-placeholder-val="{{ true }}">
+                        <span class="tool-name-tile">{{ tool.name }}</span>
+                      </sc-if>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
           <sc-if value="{{ isSel3 }}" hint-placeholder-val="{{ false }}">
             <div style="animation: {{ contentAnim }}; display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
               <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
@@ -168,7 +199,7 @@ class Component extends DCLogic {
     if (this.state.stage !== 'intro') return;
     this.setState({ stage: 'flare' });
     clearTimeout(this._t);
-    this._t = setTimeout(() => this.setState({ stage: 'dead' }), 900);
+    this._t = setTimeout(() => this.setState({ stage: 'dead' }), 675);
   }
 
   replay() {
@@ -185,6 +216,77 @@ class Component extends DCLogic {
       ...tool,
       logo: 'https://wsrv.nl/?url=cdn.simpleicons.org/' + tool.slug + '/' + tool.color.slice(1) + '&output=png&w=256&h=256'
     }));
+  }
+
+  supportedTools() {
+    const tools = [
+      { id: 'claude-code', name: 'Claude Code', logo: '/logos/claude-code.png' },
+      { id: 'gemini-cli', name: 'Gemini CLI', logo: '/logos/gemini-cli.png' },
+      { id: 'codex-cli', name: 'Codex CLI', logo: '/logos/codex-cli.png' },
+      { id: 'aider', name: 'aider', logo: '/logos/aider.png' },
+      { id: 'ollama', name: 'Ollama', logo: '/logos/ollama.png' },
+      { id: 'nvim', name: 'Neovim', logo: 'https://cdn.simpleicons.org/neovim' },
+      { id: 'vim', name: 'Vim', logo: 'https://cdn.simpleicons.org/vim' },
+      { id: 'emacs', name: 'Emacs', logo: 'https://cdn.simpleicons.org/gnuemacs' },
+      { id: 'helix', name: 'Helix', logo: null },
+      { id: 'nano', name: 'nano', logo: null },
+      { id: 'micro', name: 'micro', logo: null },
+      { id: 'kakoune', name: 'Kakoune', logo: null },
+      { id: 'tmux', name: 'tmux', logo: 'https://cdn.simpleicons.org/tmux' },
+      { id: 'zellij', name: 'Zellij', logo: null },
+      { id: 'screen', name: 'GNU Screen', logo: null },
+      { id: 'lazygit', name: 'lazygit', logo: null },
+      { id: 'gitui', name: 'GitUI', logo: null },
+      { id: 'tig', name: 'tig', logo: null },
+      { id: 'yazi', name: 'Yazi', logo: null },
+      { id: 'ranger', name: 'ranger', logo: null },
+      { id: 'nnn', name: 'nnn', logo: null },
+      { id: 'lf', name: 'lf', logo: null },
+      { id: 'mc', name: 'Midnight Commander', logo: null },
+      { id: 'broot', name: 'broot', logo: null },
+      { id: 'htop', name: 'htop', logo: null },
+      { id: 'btop', name: 'btop', logo: null },
+      { id: 'glances', name: 'Glances', logo: null },
+      { id: 'bottom', name: 'bottom', logo: null },
+      { id: 'gtop', name: 'gtop', logo: null },
+      { id: 'bpytop', name: 'bpytop', logo: null },
+      { id: 'k9s', name: 'k9s', logo: null },
+      { id: 'lazydocker', name: 'lazydocker', logo: 'https://cdn.simpleicons.org/docker' },
+      { id: 'ctop', name: 'ctop', logo: 'https://cdn.simpleicons.org/docker' },
+      { id: 'kubectl-tui', name: 'kubectl tui', logo: 'https://cdn.simpleicons.org/kubernetes' },
+      { id: 'ncdu', name: 'ncdu', logo: null },
+      { id: 'gdu', name: 'gdu', logo: null },
+      { id: 'taskwarrior', name: 'Taskwarrior', logo: null },
+      { id: 'calcurse', name: 'calcurse', logo: null },
+      { id: 'neomutt', name: 'NeoMutt', logo: null },
+      { id: 'weechat', name: 'WeeChat', logo: null },
+      { id: 'irssi', name: 'Irssi', logo: null },
+      { id: 'cmus', name: 'cmus', logo: null },
+      { id: 'ncmpcpp', name: 'ncmpcpp', logo: null },
+      { id: 'spotify-tui', name: 'spotify-tui', logo: null },
+      { id: 'spotify-player', name: 'spotify_player', logo: null },
+      { id: 'gping', name: 'gping', logo: null },
+      { id: 'bandwhich', name: 'bandwhich', logo: null },
+      { id: 'dust', name: 'dust', logo: null }
+    ];
+    const motions = ['tool-drift-a', 'tool-drift-b', 'tool-drift-c', 'tool-drift-d'];
+    return tools.map((tool) => {
+      let hash = 2166136261;
+      for (let i = 0; i < tool.id.length; i++) hash = Math.imul(hash ^ tool.id.charCodeAt(i), 16777619);
+      const unit = (shift) => ((hash >>> shift) & 255) / 255;
+      const maxLeft = tool.name.length > 15 ? 69 : tool.name.length > 10 ? 76 : tool.logo ? 80 : 89;
+      const left = (2 + unit(0) * (maxLeft - 2)).toFixed(1);
+      const top = (3 + unit(8) * 76).toFixed(1);
+      const duration = (16 + unit(16) * 13).toFixed(1);
+      const delay = (-unit(24) * 20).toFixed(1);
+      const z = 1 + (hash & 5);
+      return {
+        ...tool,
+        hasLogo: Boolean(tool.logo),
+        hasNoLogo: !tool.logo,
+        tileStyle: 'position: absolute; left: ' + left + '%; top: ' + top + '%; z-index: ' + z + '; --motion: ' + motions[hash & 3] + '; --duration: ' + duration + 's; --delay: ' + delay + 's;'
+      };
+    });
   }
 
   setActiveTool(index) {
@@ -234,7 +336,7 @@ class Component extends DCLogic {
     if (Math.abs(this._acc) < 80) return;
     const dir = this._acc > 0 ? 1 : -1;
     this._acc = 0;
-    const next = Math.min(3, Math.max(0, this.state.sel + dir));
+    const next = Math.min(4, Math.max(0, this.state.sel + dir));
     if (next !== this.state.sel) {
       this._lockUntil = now + 550;
       this.setState({ sel: next, dir });
@@ -242,6 +344,11 @@ class Component extends DCLogic {
   }
 
   onKey(e) {
+    if (this.state.stage === 'intro' && (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')) {
+      e.preventDefault();
+      this.begin();
+      return;
+    }
     if (this.state.stage !== 'dead') return;
     if (e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -253,9 +360,9 @@ class Component extends DCLogic {
       }
       return;
     }
-    if (e.key === 'ArrowDown' || e.key === 'j') this.goTo(Math.min(3, this.state.sel + 1), 1);
+    if (e.key === 'ArrowDown' || e.key === 'j') this.goTo(Math.min(4, this.state.sel + 1), 1);
     else if (e.key === 'ArrowUp' || e.key === 'k') this.goTo(Math.max(0, this.state.sel - 1), -1);
-    else if (e.key >= '1' && e.key <= '4') this.goTo(Number(e.key) - 1, Number(e.key) - 1 > this.state.sel ? 1 : -1);
+    else if (e.key >= '1' && e.key <= '5') this.goTo(Number(e.key) - 1, Number(e.key) - 1 > this.state.sel ? 1 : -1);
   }
 
   componentDidMount() {
@@ -437,6 +544,7 @@ class Component extends DCLogic {
     const st = this.state.stage;
     const os = this.state.os;
     const tools = this.presenceTools();
+    const supportedTools = this.supportedTools();
     const activeIndex = this.state.activeTool;
     const activeTool = tools[activeIndex];
     const cornerTool = tools[(activeIndex + 1) % tools.length];
@@ -450,13 +558,15 @@ class Component extends DCLogic {
       begin: () => this.begin(),
       replay: () => this.replay(),
       wheelSel: (e) => this.onWheel(e),
+      supportedTools,
+      supportedToolNames: supportedTools.map(tool => tool.name).join(', '),
       activeLogo: activeTool.logo,
       activeName: activeTool.name,
       cornerLogo: cornerTool.logo,
       alsoList: tools.filter((_, i) => i !== activeIndex).map(tool => tool.name).join(' · '),
       elapsedLabel: this.formatElapsed(this.state.elapsedSeconds),
       contentAnim: (this.state.dir >= 0 ? 'slideup' : 'slidedown') + ' 0.45s cubic-bezier(0.22, 1, 0.36, 1) both',
-      scrollHint: 'scroll, click a row, or use ↑/↓ · ' + (this.state.sel + 1) + '/4',
+      scrollHint: 'scroll, click a row, or use ↑/↓ · ' + (this.state.sel + 1) + '/5',
       feedbackText: this.state.feedback,
       typeFeedback: (e) => this.setState({ feedback: e.target.value, feedbackError: '' }),
       sendFeedback: () => this.sendFeedback(),
@@ -484,7 +594,7 @@ class Component extends DCLogic {
       linuxDetected: os === 'linux' ? ' ← detected' : '',
       windowsDetected: os === 'windows' ? ' ← detected' : '',
     };
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       vals['sel' + i] = () => this.goTo(i, i > this.state.sel ? 1 : -1);
       vals['isSel' + i] = this.state.sel === i;
       vals['bg' + i] = this.state.sel === i ? '#e8e8ee' : 'transparent';
