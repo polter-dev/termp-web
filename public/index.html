@@ -76,9 +76,11 @@
           </sc-if>
           <sc-if value="{{ isSel2 }}" hint-placeholder-val="{{ false }}">
             <div style="animation: {{ contentAnim }}; color: #8a8a94; font-size: 14px; line-height: 1.9; display: flex; flex-direction: column; gap: 14px; max-width: 560px;">
-              <div style="display: flex; flex-direction: column;"><span style="color: #55555e;"># macOS</span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">brew install polter-dev/tap/termp</span><span style="display: inline-block; width: 8px; height: 15px; background: #3c3c44; margin-left: 8px; vertical-align: -2px; animation: blink 1.1s steps(1) infinite;"></span></span><button onClick="{{ copyMac }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyMacLabel }}</button></span></div>
-              <div style="display: flex; flex-direction: column;"><span style="color: #55555e;"># linux</span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">curl -fsSL https://raw.githubusercontent.com/polter-dev/discord_terminal_presence/main/install.sh | sh</span></span><button onClick="{{ copyLinux }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyLinuxLabel }}</button></span></div>
-              <div style="display: flex; flex-direction: column;"><span style="color: #55555e;"># windows</span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">&gt; <span style="color: #c8c8d2;">go install github.com/polter-dev/discord_terminal_presence/cmd/termp@latest</span></span><button onClick="{{ copyWindows }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyWindowsLabel }}</button></span></div>
+              <span style="color: #55555e; font-size: 13px;"># heads up: these go live when the first release ships</span>
+              <div style="display: flex; flex-direction: column; border-left: {{ macBorder }}; padding-left: 12px;"><span style="color: #55555e;"># macOS<span style="color: #ab93ed;">{{ macDetected }}</span></span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">brew install polter-dev/tap/termp</span><span style="display: inline-block; width: 8px; height: 15px; background: #3c3c44; margin-left: 8px; vertical-align: -2px; animation: blink 1.1s steps(1) infinite;"></span></span><button onClick="{{ copyMac }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyMacLabel }}</button></span></div>
+              <div style="display: flex; flex-direction: column; border-left: {{ linuxBorder }}; padding-left: 12px;"><span style="color: #55555e;"># linux<span style="color: #ab93ed;">{{ linuxDetected }}</span></span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">curl -fsSL https://raw.githubusercontent.com/polter-dev/discord_terminal_presence/main/install.sh | sh</span></span><button onClick="{{ copyLinux }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyLinuxLabel }}</button></span></div>
+              <div style="display: flex; flex-direction: column; border-left: {{ windowsBorder }}; padding-left: 12px;"><span style="color: #55555e;"># windows<span style="color: #ab93ed;">{{ windowsDetected }}</span></span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">&gt; <span style="color: #c8c8d2;">go install github.com/polter-dev/discord_terminal_presence/cmd/termp@latest</span></span><button onClick="{{ copyWindows }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyWindowsLabel }}</button></span></div>
+              <div style="display: flex; flex-direction: column; padding-top: 4px; border-top: 1px solid #16161a; padding-left: 12px; border-left: 2px solid transparent;"><span style="color: #55555e; padding-top: 10px;"># then run the setup wizard once:</span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">termp setup</span></span><button onClick="{{ copySetup }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copySetupLabel }}</button></span></div>
             </div>
           </sc-if>
           <sc-if value="{{ isSel3 }}" hint-placeholder-val="{{ false }}">
@@ -109,7 +111,7 @@
   &quot;flareZoom&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 2.4, &quot;min&quot;: 1.2, &quot;max&quot;: 4, &quot;step&quot;: 0.1, &quot;section&quot;: &quot;Transition&quot;}
 }">
 class Component extends DCLogic {
-  state = { stage: 'intro', sel: 0, dir: 1, feedback: '', feedbackPending: false, feedbackError: '', sent: false, copied: '' };
+  state = { stage: 'intro', sel: 0, dir: 1, feedback: '', feedbackPending: false, feedbackError: '', sent: false, copied: '', copyFailed: '', os: '' };
 
   begin() {
     if (this.state.stage !== 'intro') return;
@@ -170,6 +172,16 @@ class Component extends DCLogic {
     window.addEventListener('hashchange', this._onHashChange);
     this.openFeedbackHash();
     this.ensureTurnstile();
+    this.detectOs();
+  }
+
+  detectOs() {
+    const ua = ((navigator.userAgent || '') + ' ' + (navigator.platform || '')).toLowerCase();
+    let os = '';
+    if (/mac|iphone|ipad|ipod/.test(ua)) os = 'mac';
+    else if (/win/.test(ua)) os = 'windows';
+    else if (/linux|android|cros|x11/.test(ua)) os = 'linux';
+    this.setState({ os });
   }
 
   openFeedbackHash() {
@@ -224,15 +236,24 @@ class Component extends DCLogic {
   }
 
   copyCommand(which, command) {
+    const done = (ok) => {
+      this.setState({ copied: ok ? which : '', copyFailed: ok ? '' : which });
+      clearTimeout(this._copyT);
+      this._copyT = setTimeout(() => this.setState({ copied: '', copyFailed: '' }), 1200);
+    };
+    let promise = null;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(command).catch(() => {});
+        promise = navigator.clipboard.writeText(command);
       }
     } catch (e) {
+      promise = null;
     }
-    this.setState({ copied: which });
-    clearTimeout(this._copyT);
-    this._copyT = setTimeout(() => this.setState({ copied: '' }), 1200);
+    if (promise && typeof promise.then === 'function') {
+      promise.then(() => done(true)).catch(() => done(false));
+    } else {
+      done(false);
+    }
   }
 
   async sendFeedback() {
@@ -319,6 +340,9 @@ class Component extends DCLogic {
 
   renderVals() {
     const st = this.state.stage;
+    const os = this.state.os;
+    const copyLabel = (which) =>
+      this.state.copyFailed === which ? 'copy failed' : this.state.copied === which ? 'copied ✓' : 'copy';
     const vals = {
       showIntro: st !== 'dead',
       showDead: st === 'dead',
@@ -344,9 +368,17 @@ class Component extends DCLogic {
       copyMac: () => this.copyCommand('mac', 'brew install polter-dev/tap/termp'),
       copyLinux: () => this.copyCommand('linux', 'curl -fsSL https://raw.githubusercontent.com/polter-dev/discord_terminal_presence/main/install.sh | sh'),
       copyWindows: () => this.copyCommand('windows', 'go install github.com/polter-dev/discord_terminal_presence/cmd/termp@latest'),
-      copyMacLabel: this.state.copied === 'mac' ? 'copied ✓' : 'copy',
-      copyLinuxLabel: this.state.copied === 'linux' ? 'copied ✓' : 'copy',
-      copyWindowsLabel: this.state.copied === 'windows' ? 'copied ✓' : 'copy',
+      copySetup: () => this.copyCommand('setup', 'termp setup'),
+      copyMacLabel: copyLabel('mac'),
+      copyLinuxLabel: copyLabel('linux'),
+      copyWindowsLabel: copyLabel('windows'),
+      copySetupLabel: copyLabel('setup'),
+      macBorder: os === 'mac' ? '2px solid #ab93ed' : '2px solid transparent',
+      linuxBorder: os === 'linux' ? '2px solid #ab93ed' : '2px solid transparent',
+      windowsBorder: os === 'windows' ? '2px solid #ab93ed' : '2px solid transparent',
+      macDetected: os === 'mac' ? ' ← detected' : '',
+      linuxDetected: os === 'linux' ? ' ← detected' : '',
+      windowsDetected: os === 'windows' ? ' ← detected' : '',
     };
     for (let i = 0; i < 4; i++) {
       vals['sel' + i] = () => this.goTo(i, i > this.state.sel ? 1 : -1);
