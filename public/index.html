@@ -56,17 +56,17 @@
 </helmet>
 <div style="position: fixed; inset: 0; background: #050506; overflow: hidden;" data-screen-label="termp landing">
   <sc-if value="{{ showIntro }}" hint-placeholder-val="{{ true }}">
-    <div data-screen-label="intro" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 44px; transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.5, 0, 0.6, 1); opacity: {{ introOp }}; transform: {{ introTf }};">
+    <div data-screen-label="intro" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 44px; transition: opacity 0.56s ease, transform 0.64s cubic-bezier(0.5, 0, 0.6, 1); opacity: {{ introOp }}; transform: {{ introTf }};">
       <img src="/termp-wordmark.svg" alt="termp" style="position: absolute; top: clamp(18px, 4vw, 32px); left: clamp(18px, 4vw, 40px); width: clamp(92px, 12vw, 116px); height: auto; opacity: 0.72; pointer-events: none;">
       <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="position: absolute; top: clamp(18px, 4vw, 32px); right: clamp(18px, 4vw, 40px); font-size: 13px; letter-spacing: 0.02em; color: #6e6e78; opacity: 0.85; transition: color 0.2s ease;" style-hover="color: #8ab8ff;">github ↗</a>
       <div style="position: relative; width: 164px; height: 164px; animation: bob 3.2s ease-in-out infinite;">
-        <button onClick="{{ begin }}" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(150deg, #26262c, #0e0e12); border: 1px solid #34343c; box-shadow: 0 0 48px rgba(171,147,237,0.12), 0 14px 36px rgba(0,0,0,0.7); color: #f2f2f6; font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 500; cursor: pointer; overflow: hidden; transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, color 0.25s ease;" style-hover="transform: scale(1.12); border-color: #50505c; color: #ffffff;" style-active="transform: scale(0.92);" style-before="content: ''; position: absolute; left: 14%; right: 14%; top: 5%; height: 42%; border-radius: 50%; background: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0)); pointer-events: none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="68" height="68" aria-label="termp" role="img" style="display: block;"><g transform="rotate(-8 16 16)"><polyline points="9 10 16.5 16 9 22" fill="none" stroke="#ab93ed" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"></polyline><line x1="20" y1="22.5" x2="25.5" y2="21.5" stroke="#e8e8ee" stroke-width="4.2" stroke-linecap="round"></line></g></svg></button>
+        <button onClick="{{ begin }}" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(150deg, #26262c, #0e0e12); border: 1px solid #34343c; box-shadow: 0 0 48px rgba(171,147,237,0.12), 0 14px 36px rgba(0,0,0,0.7); color: #f2f2f6; font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 500; cursor: pointer; overflow: hidden; transition: transform 0.34s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, color 0.25s ease;" style-hover="transform: scale(1.12); border-color: #50505c; color: #ffffff;" style-active="transform: scale(0.92);" style-before="content: ''; position: absolute; left: 14%; right: 14%; top: 5%; height: 42%; border-radius: 50%; background: linear-gradient(rgba(255,255,255,0.22), rgba(255,255,255,0)); pointer-events: none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="68" height="68" aria-label="termp" role="img" style="display: block;"><g transform="rotate(-8 16 16)"><polyline points="9 10 16.5 16 9 22" fill="none" stroke="#ab93ed" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"></polyline><line x1="20" y1="22.5" x2="25.5" y2="21.5" stroke="#e8e8ee" stroke-width="4.2" stroke-linecap="round"></line></g></svg></button>
       </div>
       <div style="color: #5c5c66; font-size: 15px; letter-spacing: 0.04em;">$ termp start<span style="display: inline-block; width: 9px; height: 18px; background: #8a8a94; margin-left: 8px; vertical-align: -2px; animation: blink 1.1s steps(1) infinite;"></span></div>
     </div>
   </sc-if>
   <sc-if value="{{ showDead }}" hint-placeholder-val="{{ false }}">
-    <div data-screen-label="terminal content" onWheel="{{ wheelSel }}" style="position: absolute; inset: 0; background: #050506; display: flex; flex-direction: column; animation: fadeup 0.6s ease both;">
+    <div data-screen-label="terminal content" onWheel="{{ wheelSel }}" style="position: absolute; inset: 0; background: #050506; display: flex; flex-direction: column; animation: fadeup 0.45s ease both;">
       <div style="height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 18px; background: #0e0e11; border-bottom: 1px solid #1a1a1f;">
         <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
         <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
@@ -81,8 +81,8 @@
           <div onClick="{{ sel0 }}" tabindex="0" role="button" aria-label="what-it-is" data-row="0" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg0 }}; color: {{ fg0 }};"><span>[1]</span><span>what-it-is</span></div>
           <div onClick="{{ sel1 }}" tabindex="0" role="button" aria-label="how-it-works" data-row="1" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg1 }}; color: {{ fg1 }};"><span>[2]</span><span>how-it-works</span></div>
           <div onClick="{{ sel2 }}" tabindex="0" role="button" aria-label="install" data-row="2" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg2 }}; color: {{ fg2 }};"><span>[3]</span><span>install</span></div>
-          <div onClick="{{ sel3 }}" tabindex="0" role="button" aria-label="supported-tools" data-row="3" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg3 }}; color: {{ fg3 }};"><span>[4]</span><span>supported-tools</span></div>
-          <div onClick="{{ sel4 }}" tabindex="0" role="button" aria-label="leave-feedback" data-row="4" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg4 }}; color: {{ fg4 }};"><span>[5]</span><span>leave-feedback</span></div>
+          <div onClick="{{ sel3 }}" tabindex="0" role="button" aria-label="leave-feedback" data-row="3" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg3 }}; color: {{ fg3 }};"><span>[4]</span><span>leave-feedback</span></div>
+          <div onClick="{{ sel4 }}" tabindex="0" role="button" aria-label="supported-tools" data-row="4" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg4 }}; color: {{ fg4 }};"><span>[5]</span><span>supported-tools</span></div>
           <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.2s, color 0.2s; background: transparent; color: #7a7a86;" style-hover="background: #0e0e11; color: #c8c8d2;"><span>[6]</span><span>source -&gt;</span></a>
         </div>
         <div style="flex: 1; border-top: 1px solid #16161a; padding-top: 22px;">
@@ -145,7 +145,7 @@
               <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px; padding: 14px 16px; background: rgba(171,147,237,0.07); border: 1px solid #3a334d; border-left: 3px solid #ab93ed; border-radius: 7px; box-shadow: 0 10px 28px rgba(0,0,0,0.22);"><span style="color: #e8e8ee; font-size: 13px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere;">One more step — run the setup wizard:</span><span style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1 1 180px; min-width: 0; color: #ab93ed; font-size: 16px; font-weight: 500;">$ <span style="color: #e8e8ee;">termp setup</span></span><button onClick="{{ copySetup }}" style="flex: 0 0 auto; min-width: 76px; background: #e8e8ee; border: 1px solid #e8e8ee; border-radius: 5px; color: #0a0a0c; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; line-height: 1; padding: 7px 12px; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color 0.2s;" style-hover="background: #ffffff; border-color: #ffffff; transform: translateY(-1px);" style-active="transform: translateY(1px);">{{ copySetupLabel }}</button></span></div>
             </div>
           </sc-if>
-          <sc-if value="{{ isSel3 }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ isSel4 }}" hint-placeholder-val="{{ false }}">
             <div style="animation: {{ contentAnim }}; display: flex; flex-direction: column; gap: 12px;">
               <span style="color: #8a8a94; font-size: 14px; line-height: 1.75;"><span style="color: #b8b8c2;">48 tools</span> detected out of the box — and any tool you add.</span>
               <div role="region" aria-label="supported tools" style="position: relative; width: 100%; height: clamp(250px, 38vh, 350px); overflow: hidden; border: 1px solid #202026; border-radius: 10px; background: radial-gradient(circle at 48% 46%, rgba(171,147,237,0.055), transparent 48%), #0a0a0c; box-sizing: border-box;">
@@ -165,7 +165,7 @@
               </div>
             </div>
           </sc-if>
-          <sc-if value="{{ isSel4 }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ isSel3 }}" hint-placeholder-val="{{ false }}">
             <div style="animation: {{ contentAnim }}; display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
               <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
                 <span style="color: #55555e; font-size: 13px;"># tell me what you think — bugs, ideas, tools i should detect</span>
@@ -199,7 +199,7 @@ class Component extends DCLogic {
     if (this.state.stage !== 'intro') return;
     this.setState({ stage: 'flare' });
     clearTimeout(this._t);
-    this._t = setTimeout(() => this.setState({ stage: 'dead' }), 900);
+    this._t = setTimeout(() => this.setState({ stage: 'dead' }), 675);
   }
 
   replay() {
@@ -344,6 +344,11 @@ class Component extends DCLogic {
   }
 
   onKey(e) {
+    if (this.state.stage === 'intro' && (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')) {
+      e.preventDefault();
+      this.begin();
+      return;
+    }
     if (this.state.stage !== 'dead') return;
     if (e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -382,7 +387,7 @@ class Component extends DCLogic {
 
   openFeedbackHash() {
     if (location.hash === '#feedback' || location.hash === '#feedback-turnstile') {
-      this.setState({ stage: 'dead', sel: 4, dir: 1 });
+      this.setState({ stage: 'dead', sel: 3, dir: 1 });
     }
   }
 
