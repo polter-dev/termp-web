@@ -1,88 +1,131 @@
+const MAX_JSON_BODY_BYTES = 16 * 1024;
+const MAX_MESSAGE_CHARS = 5000;
+const MAX_EMAIL_CHARS = 320;
+const MAX_CATEGORY_CHARS = 100;
+const MAX_TURNSTILE_TOKEN_CHARS = 2048;
+const FEEDBACK_FIELDS = new Set([
+  "message",
+  "category",
+  "email",
+  "company",
+  "cf-turnstile-response",
+  "turnstileToken"
+]);
+
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8" }
   });
 
-async function handleContactPost(request, env) {
-  let body;
+async function readBoundedJson(request) {
+  const contentType = request.headers.get("Content-Type") ?? "";
+
+  if (contentType.split(";", 1)[0].trim().toLowerCase() !== "application/json") {
+    return { error: json({ ok: false, error: "Content-Type must be application/json." }, 415) };
+  }
+
+  const contentLength = request.headers.get("Content-Length");
+
+  if (contentLength !== null) {
+    if (!/^\d+$/.test(contentLength)) {
+      return { error: json({ ok: false, error: "Invalid Content-Length header." }, 400) };
+    }
+
+    if (Number(contentLength) > MAX_JSON_BODY_BYTES) {
+      return { error: json({ ok: false, error: "Request body is too large." }, 413) };
+    }
+  }
+
+  if (!request.body) {
+    return { error: json({ ok: false, error: "Request body must be valid JSON." }, 400) };
+  }
+
+  const reader = request.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
 
   try {
-    body = await request.json();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_JSON_BODY_BYTES) {
+        try {
+          await reader.cancel();
+        } catch {
+          // The 413 response is still authoritative if stream cancellation fails.
+        }
+        return { error: json({ ok: false, error: "Request body is too large." }, 413) };
+      }
+
+      chunks.push(value);
+    }
   } catch {
-    return json({ ok: false, error: "Request body must be valid JSON." }, 400);
+    return { error: json({ ok: false, error: "Request body could not be read." }, 400) };
   }
 
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return json({ ok: false, error: "Request body must be a JSON object." }, 400);
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
   }
 
-  const { name, email, message, company } = body;
-
-  // Silently accept and discard submissions that fill the honeypot.
-  if (typeof company === "string" ? company.trim() : Boolean(company)) {
-    return json({ ok: true });
+  try {
+    return { body: JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)) };
+  } catch {
+    return { error: json({ ok: false, error: "Request body must be valid JSON." }, 400) };
   }
-
-  const cleanName = typeof name === "string" ? name.trim() : "";
-  const cleanEmail = typeof email === "string" ? email.trim() : "";
-  const cleanMessage = typeof message === "string" ? message.trim() : "";
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!cleanName) {
-    return json({ ok: false, error: "Name is required." }, 400);
-  }
-
-  if (!emailPattern.test(cleanEmail)) {
-    return json({ ok: false, error: "A valid email address is required." }, 400);
-  }
-
-  if (!cleanMessage) {
-    return json({ ok: false, error: "Message is required." }, 400);
-  }
-
-  if (typeof message === "string" && message.length > 5000) {
-    return json({ ok: false, error: "Message must be 5000 characters or fewer." }, 400);
-  }
-
-  const apiKey = env.RESEND_API_KEY;
-
-  if (!apiKey) {
-    // Local/dev deployments can exercise the complete form without an email account.
-    console.log("Contact accepted; RESEND_API_KEY is not configured, so no email was sent.");
-    return json({ ok: true });
-  }
-
-  /*
-   * TODO: Connect the preferred email provider. A Resend implementation would
-   * look roughly like this (keep addresses/configuration in environment vars):
-   *
-   * const response = await fetch("https://api.resend.com/emails", {
-   *   method: "POST",
-   *   headers: {
-   *     Authorization: `Bearer ${apiKey}`,
-   *     "Content-Type": "application/json"
-   *   },
-   *   body: JSON.stringify({
-   *     from: env.CONTACT_FROM_EMAIL,
-   *     to: [env.CONTACT_TO_EMAIL],
-   *     reply_to: cleanEmail,
-   *     subject: `termp contact from ${cleanName}`,
-   *     text: cleanMessage
-   *   })
-   * });
-   *
-   * Check response.ok and return a 502 response if delivery fails.
-   */
-  console.log("Contact accepted; email delivery TODO is not implemented yet.");
-  return json({ ok: true });
 }
 
-async function verifyTurnstile(token, secret) {
+function feedbackDevBypassEnabled(env) {
+  return env.ENVIRONMENT === "development" && env.FEEDBACK_DEV_BYPASS === "true";
+}
+
+function feedbackConfigurationAvailable(env, allowDevBypass) {
+  if (!env.termp_feedback || typeof env.termp_feedback.prepare !== "function") return false;
+  if (allowDevBypass) return true;
+
+  return Boolean(
+    env.TURNSTILE_SECRET_KEY &&
+      env.TURNSTILE_EXPECTED_ACTION &&
+      env.TURNSTILE_EXPECTED_HOSTNAME &&
+      env.FEEDBACK_PRE_LIMITER &&
+      typeof env.FEEDBACK_PRE_LIMITER.limit === "function" &&
+      env.FEEDBACK_LIMITER &&
+      typeof env.FEEDBACK_LIMITER.limit === "function"
+  );
+}
+
+async function handleContactPost(request, env) {
+  const limiter = env.CONTACT_LIMITER;
+  if (!limiter || typeof limiter.limit !== "function") {
+    return json({ ok: false, error: "Contact form is currently unavailable; your message was not received." }, 503);
+  }
+
+  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+  const { success } = await limiter.limit({ key: ip });
+
+  if (!success) {
+    return json({ ok: false, error: "Too many contact requests. Please try again later." }, 429);
+  }
+
+  // Delivery is intentionally disabled until a provider is implemented and verified.
+  return json({ ok: false, error: "Contact form is currently unavailable; your message was not received." }, 503);
+}
+
+async function verifyTurnstile(token, secret, remoteIp, expectedAction, expectedHostname) {
   try {
     const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
-      body: new URLSearchParams({ secret, response: token })
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret,
+        response: token,
+        remoteip: remoteIp
+      })
     });
 
     if (!response.ok) {
@@ -91,7 +134,11 @@ async function verifyTurnstile(token, secret) {
     }
 
     const result = await response.json();
-    return result.success === true;
+    return (
+      result.success === true &&
+      result.action === expectedAction &&
+      result.hostname === expectedHostname
+    );
   } catch (error) {
     console.error("Turnstile verification failed.", error);
     return false;
@@ -99,7 +146,7 @@ async function verifyTurnstile(token, secret) {
 }
 
 function discordFeedbackContent(message, email) {
-  const emailLine = email ? `\nemail: ${email.slice(0, 320)}` : "";
+  const emailLine = email ? `\nemail: ${email}` : "";
   const messageLimit = Math.max(0, 2000 - emailLine.length);
 
   return message.slice(0, messageLimit) + emailLine;
@@ -125,16 +172,34 @@ async function postFeedbackToDiscord(webhookUrl, message, email) {
 }
 
 async function handleFeedbackPost(request, env, ctx) {
-  let body;
+  const allowDevBypass = feedbackDevBypassEnabled(env);
 
-  try {
-    body = await request.json();
-  } catch {
-    return json({ ok: false, error: "Request body must be valid JSON." }, 400);
+  if (!feedbackConfigurationAvailable(env, allowDevBypass)) {
+    console.error("Feedback processing is unavailable because required bindings or configuration are missing.");
+    return json({ ok: false, error: "Feedback is temporarily unavailable. Please try again later." }, 503);
   }
 
+  const ip = request.headers.get("CF-Connecting-IP") ?? "";
+  const preLimiter = env.FEEDBACK_PRE_LIMITER;
+
+  if (preLimiter && typeof preLimiter.limit === "function") {
+    const { success } = await preLimiter.limit({ key: ip || "unknown" });
+    if (!success) {
+      return json({ ok: false, error: "Too many feedback requests. Please try again later." }, 429);
+    }
+  }
+
+  const parsed = await readBoundedJson(request);
+  if (parsed.error) return parsed.error;
+
+  const body = parsed.body;
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return json({ ok: false, error: "Request body must be a JSON object." }, 400);
+  }
+
+  const unknownFields = Object.keys(body).filter((field) => !FEEDBACK_FIELDS.has(field));
+  if (unknownFields.length > 0) {
+    return json({ ok: false, error: "Request body contains unknown fields." }, 400);
   }
 
   const { message, category, email, company } = body;
@@ -144,38 +209,57 @@ async function handleFeedbackPost(request, env, ctx) {
     return json({ ok: true });
   }
 
-  const cleanMessage = typeof message === "string" ? message.trim() : "";
+  if (typeof message !== "string" || !message.trim()) {
+    return json({ ok: false, error: "Message is required." }, 400);
+  }
+  if (message.length > MAX_MESSAGE_CHARS) {
+    return json({ ok: false, error: `Message must be ${MAX_MESSAGE_CHARS} characters or fewer.` }, 400);
+  }
+  if (category !== undefined && category !== null && typeof category !== "string") {
+    return json({ ok: false, error: "Category must be a string." }, 400);
+  }
+  if (typeof category === "string" && category.length > MAX_CATEGORY_CHARS) {
+    return json({ ok: false, error: `Category must be ${MAX_CATEGORY_CHARS} characters or fewer.` }, 400);
+  }
+  if (email !== undefined && email !== null && typeof email !== "string") {
+    return json({ ok: false, error: "Email must be a string." }, 400);
+  }
+  if (typeof email === "string" && email.length > MAX_EMAIL_CHARS) {
+    return json({ ok: false, error: `Email must be ${MAX_EMAIL_CHARS} characters or fewer.` }, 400);
+  }
+
+  const rawToken = body["cf-turnstile-response"] ?? body.turnstileToken;
+  if (rawToken !== undefined && (typeof rawToken !== "string" || rawToken.length > MAX_TURNSTILE_TOKEN_CHARS)) {
+    return json({ ok: false, error: "Turnstile verification failed." }, 403);
+  }
+
+  const cleanMessage = message.trim();
   const cleanCategory = typeof category === "string" ? category.trim() || null : null;
   const cleanEmail = typeof email === "string" ? email.trim() || null : null;
 
-  if (!cleanMessage) {
-    return json({ ok: false, error: "Message is required." }, 400);
-  }
-
-  if (typeof message === "string" && message.length > 5000) {
-    return json({ ok: false, error: "Message must be 5000 characters or fewer." }, 400);
-  }
-
-  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  // Windows are only 10 or 60 seconds; counters are per Cloudflare location,
-  // eventually consistent, and intentionally not an accurate accounting system.
-  const { success } = await env.FEEDBACK_LIMITER.limit({ key: ip });
-
-  if (!success) {
-    return json({ ok: false, error: "Too many feedback submissions. Please try again later." }, 429);
-  }
-
-  const turnstileSecret = env.TURNSTILE_SECRET_KEY;
-
-  if (turnstileSecret) {
-    const rawToken = body["cf-turnstile-response"] ?? body.turnstileToken;
-    const token = typeof rawToken === "string" ? rawToken.trim() : "";
-
-    if (!token || !(await verifyTurnstile(token, turnstileSecret))) {
+  if (!allowDevBypass) {
+    if (
+      !ip ||
+      typeof rawToken !== "string" ||
+      !rawToken.trim() ||
+      !(await verifyTurnstile(
+        rawToken.trim(),
+        env.TURNSTILE_SECRET_KEY,
+        ip,
+        env.TURNSTILE_EXPECTED_ACTION,
+        env.TURNSTILE_EXPECTED_HOSTNAME
+      ))
+    ) {
       return json({ ok: false, error: "Turnstile verification failed." }, 403);
     }
-  } else {
-    console.warn("Turnstile verification skipped; TURNSTILE_SECRET_KEY is not configured.");
+  }
+
+  const submissionLimiter = env.FEEDBACK_LIMITER;
+  if (submissionLimiter && typeof submissionLimiter.limit === "function") {
+    const { success } = await submissionLimiter.limit({ key: ip || "unknown" });
+    if (!success) {
+      return json({ ok: false, error: "Too many feedback submissions. Please try again later." }, 429);
+    }
   }
 
   try {
