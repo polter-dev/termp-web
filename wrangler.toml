@@ -12,14 +12,31 @@ database_name = "termp-feedback"
 database_id = "a922d9e3-d0b1-4bb0-a728-5d98ff9584d1"
 
 [[ratelimits]]
+name = "FEEDBACK_PRE_LIMITER"
+namespace_id = "1002"
+  [ratelimits.simple]
+  limit = 30
+  period = 60
+
+[[ratelimits]]
 name = "FEEDBACK_LIMITER"
 namespace_id = "1001"
   [ratelimits.simple]
   limit = 5
   period = 60
 
-# Store production credentials with:
-# npx wrangler secret put RESEND_API_KEY
-# For non-secret configuration, an optional example would be:
-# [vars]
-# CONTACT_TO_EMAIL = "contact@example.com"
+[[ratelimits]]
+name = "CONTACT_LIMITER"
+namespace_id = "1003"
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+[vars]
+ENVIRONMENT = "production"
+TURNSTILE_EXPECTED_ACTION = "turnstile-spin-v2"
+TURNSTILE_EXPECTED_HOSTNAME = "termp.polter.sh"
+
+# Store TURNSTILE_SECRET_KEY with `npx wrangler secret put TURNSTILE_SECRET_KEY`.
+# Local Turnstile bypass requires both ENVIRONMENT = "development" and
+# FEEDBACK_DEV_BYPASS = "true" in a local-only Wrangler environment.
