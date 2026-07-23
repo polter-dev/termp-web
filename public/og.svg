@@ -44,13 +44,13 @@
     <circle cx="877" cy="344" r="23" fill="#1e1f22" stroke="#111214" stroke-width="7"/>
     <path d="M870 337h14v14h-14z" fill="#23a55a" opacity=".18"/>
     <circle cx="877" cy="344" r="7" fill="#23a55a"/>
-    <text x="910" y="260" fill="#f2f3f5" font-family="Arial, sans-serif" font-size="25" font-weight="700">Claude Code</text>
-    <text x="910" y="292" fill="#b5bac1" font-family="Arial, sans-serif" font-size="18">Using Claude Code</text>
-    <circle cx="920" cy="325" r="7" fill="#23a55a"/>
-    <text x="938" y="331" fill="#23a55a" font-family="Arial, sans-serif" font-size="18" font-weight="600">01:42:08</text>
-    <text x="756" y="397" fill="#6d6f78" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14">also: Neovim · lazygit</text>
-    <rect x="756" y="418" width="137" height="7" rx="3.5" fill="#26262c"/>
-    <rect x="903" y="418" width="82" height="7" rx="3.5" fill="#202026"/>
+    <text x="902" y="267" fill="#f2f3f5" font-family="Arial, sans-serif" font-size="25" font-weight="700">Claude Code</text>
+    <text x="902" y="294" fill="#b5bac1" font-family="Arial, sans-serif" font-size="18">Using Claude Code</text>
+    <circle cx="912" cy="316" r="7" fill="#23a55a"/>
+    <text x="930" y="322" fill="#23a55a" font-family="Arial, sans-serif" font-size="18" font-weight="600">01:42:08</text>
+    <text x="756" y="382" fill="#6d6f78" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14">also: Neovim · lazygit</text>
+    <rect x="756" y="402" width="137" height="7" rx="3.5" fill="#26262c"/>
+    <rect x="903" y="402" width="82" height="7" rx="3.5" fill="#202026"/>
   </g>
 
   <text x="96" y="535" fill="#55555e" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17">$ termp start</text>
