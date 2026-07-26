@@ -48,7 +48,7 @@
     <text x="902" y="294" fill="#b5bac1" font-family="Arial, sans-serif" font-size="18">Using Claude Code</text>
     <circle cx="912" cy="316" r="7" fill="#23a55a"/>
     <text x="930" y="322" fill="#23a55a" font-family="Arial, sans-serif" font-size="18" font-weight="600">01:42:08</text>
-    <text x="756" y="382" fill="#6d6f78" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14">also: Neovim · lazygit</text>
+    <text x="756" y="382" fill="#6d6f78" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="14"><tspan font-style="italic">With</tspan> Neovim · lazygit</text>
     <rect x="756" y="402" width="137" height="7" rx="3.5" fill="#26262c"/>
     <rect x="903" y="402" width="82" height="7" rx="3.5" fill="#202026"/>
   </g>
