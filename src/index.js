@@ -11,6 +11,7 @@ const LATEST_RELEASE_CACHE_KEY =
   "https://termp.polter.sh/__termp_internal/latest-release-version";
 const LATEST_RELEASE_CACHE_TTL_SECONDS = 10 * 60;
 const UNRELEASED_VERSION = "unreleased";
+const RELEASE_TAG_PATTERN = /^[0-9A-Za-z.+-]+$/;
 const DOWNLOAD_CHANNELS = new Set(["curl", "brew", "update", "direct"]);
 const DOWNLOAD_OSES = new Set(["darwin", "linux"]);
 const DOWNLOAD_ARCHES = new Set(["amd64", "arm64"]);
@@ -334,12 +335,24 @@ async function cacheLatestVersion(cache, version) {
   }
 }
 
+function isValidReleaseTag(tag) {
+  return (
+    typeof tag === "string" &&
+    tag.length > 0 &&
+    tag.length <= 100 &&
+    RELEASE_TAG_PATTERN.test(tag)
+  );
+}
+
 async function resolveLatestVersion() {
   const cache = caches.default;
 
   try {
     const cached = await cache.match(LATEST_RELEASE_CACHE_KEY);
-    if (cached) return await cached.text();
+    if (cached) {
+      const cachedVersion = await cached.text();
+      return isValidReleaseTag(cachedVersion) ? cachedVersion : UNRELEASED_VERSION;
+    }
   } catch (error) {
     console.error("Failed to read the latest release version cache.", error);
   }
@@ -356,13 +369,7 @@ async function resolveLatestVersion() {
 
     if (response.ok) {
       const release = await response.json();
-      if (
-        release &&
-        typeof release === "object" &&
-        typeof release.tag_name === "string" &&
-        release.tag_name.length > 0 &&
-        release.tag_name.length <= 100
-      ) {
+      if (release && typeof release === "object" && isValidReleaseTag(release.tag_name)) {
         version = release.tag_name;
       }
     } else if (response.status !== 404) {
@@ -479,10 +486,22 @@ async function handleDownload(request, env, ctx, pathname) {
   }
 
   const version = await resolveLatestVersion();
+  if (version === UNRELEASED_VERSION && env.ENVIRONMENT === "production") {
+    return new Response(request.method === "HEAD" ? null : "No release available.", {
+      status: 503,
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "text/plain; charset=utf-8"
+      }
+    });
+  }
+
+  const encodedVersion = encodeURIComponent(version);
+  const encodedFilenameVersion = encodeURIComponent(version.replace(/^v/, ""));
   const target =
     version === UNRELEASED_VERSION
       ? `/_test-assets/termp_${os}_${arch}.tar.gz`
-      : `https://github.com/polter-dev/discord_terminal_presence/releases/download/${version}/termp_${version.replace(/^v/, "")}_${os}_${arch}.tar.gz`;
+      : `https://github.com/polter-dev/discord_terminal_presence/releases/download/${encodedVersion}/termp_${encodedFilenameVersion}_${os}_${arch}.tar.gz`;
 
   if (
     request.method === "GET" &&
