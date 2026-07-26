@@ -12,6 +12,7 @@ const LATEST_RELEASE_CACHE_KEY =
 const LATEST_RELEASE_CACHE_TTL_SECONDS = 10 * 60;
 const UNRELEASED_VERSION = "unreleased";
 const RELEASE_TAG_PATTERN = /^[0-9A-Za-z.+-]+$/;
+const CONTROL_CHARACTERS_PATTERN = /[\u0000-\u001F\u007F-\u009F]/g;
 const DOWNLOAD_CHANNELS = new Set(["curl", "brew", "update", "direct"]);
 const DOWNLOAD_OSES = new Set(["darwin", "linux"]);
 const DOWNLOAD_ARCHES = new Set(["amd64", "arm64"]);
@@ -24,10 +25,13 @@ const FEEDBACK_FIELDS = new Set([
   "turnstileToken"
 ]);
 
-const json = (body, status = 200) =>
+const json = (body, status = 200, headers = {}) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8" }
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      ...headers
+    }
   });
 
 async function readBoundedJson(request) {
@@ -167,12 +171,19 @@ function coarseOsFromUserAgent(userAgent) {
   return "Other";
 }
 
+function stripControlCharacters(value) {
+  return value.replace(CONTROL_CHARACTERS_PATTERN, "");
+}
+
 function discordFeedbackContent(message, email, os) {
-  const osPrefix = `[${os}] `;
-  const emailLine = email ? `\nemail: ${email}` : "";
+  const safeOs = stripControlCharacters(os);
+  const safeMessage = stripControlCharacters(message);
+  const safeEmail = email ? stripControlCharacters(email) : null;
+  const osPrefix = `[${safeOs}] `;
+  const emailLine = safeEmail ? `\nemail: ${safeEmail}` : "";
   const messageLimit = Math.max(0, 2000 - osPrefix.length - emailLine.length);
 
-  return osPrefix + message.slice(0, messageLimit) + emailLine;
+  return osPrefix + safeMessage.slice(0, messageLimit) + emailLine;
 }
 
 async function postFeedbackToDiscord(webhookUrl, message, email, os) {
@@ -203,15 +214,6 @@ async function handleFeedbackPost(request, env, ctx) {
   }
 
   const ip = request.headers.get("CF-Connecting-IP") ?? "";
-  const preLimiter = env.FEEDBACK_PRE_LIMITER;
-
-  if (preLimiter && typeof preLimiter.limit === "function") {
-    const { success } = await preLimiter.limit({ key: ip || "unknown" });
-    if (!success) {
-      return json({ ok: false, error: "Too many feedback requests. Please try again later." }, 429);
-    }
-  }
-
   const parsed = await readBoundedJson(request);
   if (parsed.error) return parsed.error;
 
@@ -223,6 +225,15 @@ async function handleFeedbackPost(request, env, ctx) {
   const unknownFields = Object.keys(body).filter((field) => !FEEDBACK_FIELDS.has(field));
   if (unknownFields.length > 0) {
     return json({ ok: false, error: "Request body contains unknown fields." }, 400);
+  }
+
+  const preLimiter = env.FEEDBACK_PRE_LIMITER;
+
+  if (preLimiter && typeof preLimiter.limit === "function") {
+    const { success } = await preLimiter.limit({ key: ip || "unknown" });
+    if (!success) {
+      return json({ ok: false, error: "Too many feedback requests. Please try again later." }, 429);
+    }
   }
 
   const { message, category, email, company } = body;
@@ -258,7 +269,8 @@ async function handleFeedbackPost(request, env, ctx) {
 
   const cleanMessage = message.trim();
   const cleanCategory = typeof category === "string" ? category.trim() || null : null;
-  const cleanEmail = typeof email === "string" ? email.trim() || null : null;
+  const cleanEmail =
+    typeof email === "string" ? stripControlCharacters(email.trim()) || null : null;
   const os = coarseOsFromUserAgent(request.headers.get("User-Agent") ?? "");
 
   if (!allowDevBypass) {
@@ -351,13 +363,18 @@ async function resolveLatestVersion() {
     const cached = await cache.match(LATEST_RELEASE_CACHE_KEY);
     if (cached) {
       const cachedVersion = await cached.text();
-      return isValidReleaseTag(cachedVersion) ? cachedVersion : UNRELEASED_VERSION;
+      if (
+        cachedVersion === UNRELEASED_VERSION ||
+        isValidReleaseTag(cachedVersion)
+      ) {
+        return cachedVersion;
+      }
+
+      console.error("Ignoring an invalid cached latest release version.");
     }
   } catch (error) {
     console.error("Failed to read the latest release version cache.", error);
   }
-
-  let version = UNRELEASED_VERSION;
 
   try {
     const response = await fetch(LATEST_RELEASE_URL, {
@@ -370,17 +387,25 @@ async function resolveLatestVersion() {
     if (response.ok) {
       const release = await response.json();
       if (release && typeof release === "object" && isValidReleaseTag(release.tag_name)) {
-        version = release.tag_name;
+        await cacheLatestVersion(cache, release.tag_name);
+        return release.tag_name;
       }
-    } else if (response.status !== 404) {
-      console.error(`Latest GitHub release lookup returned HTTP ${response.status}.`);
+
+      console.error("Latest GitHub release lookup returned an invalid release.");
+      return UNRELEASED_VERSION;
     }
+
+    if (response.status === 404) {
+      await cacheLatestVersion(cache, UNRELEASED_VERSION);
+      return UNRELEASED_VERSION;
+    }
+
+    console.error(`Latest GitHub release lookup returned HTTP ${response.status}.`);
   } catch (error) {
     console.error("Latest GitHub release lookup failed.", error);
   }
 
-  await cacheLatestVersion(cache, version);
-  return version;
+  return UNRELEASED_VERSION;
 }
 
 async function countAllowed(request, env) {
@@ -437,6 +462,18 @@ async function countDownloadFetch(request, env, version, channel, os, arch) {
   } catch (error) {
     console.error("Failed to count binary download.", error);
   }
+}
+
+async function countExplicitDownloadIfLatest(request, env, version, channel, os, arch) {
+  const latestVersion = await resolveLatestVersion();
+  if (
+    latestVersion === UNRELEASED_VERSION ||
+    version !== latestVersion
+  ) {
+    return;
+  }
+
+  await countDownloadFetch(request, env, version, channel, os, arch);
 }
 
 function handleInstallScript(request, env, ctx) {
@@ -514,7 +551,11 @@ async function handleDownload(request, env, ctx, pathname) {
     request.method === "GET" &&
     !isObviousBot(request.headers.get("User-Agent") ?? "")
   ) {
-    ctx.waitUntil(countDownloadFetch(request, env, version, channel, os, arch));
+    ctx.waitUntil(
+      hasExplicitVersion
+        ? countExplicitDownloadIfLatest(request, env, version, channel, os, arch)
+        : countDownloadFetch(request, env, version, channel, os, arch)
+    );
   }
 
   return new Response(null, {
@@ -546,7 +587,11 @@ export default {
         return handleContactPost(request, env);
       }
 
-      return json({ ok: false, error: "Method not allowed." }, 405);
+      return json(
+        { ok: false, error: "Method not allowed." },
+        405,
+        { "Allow": "POST, OPTIONS" }
+      );
     }
 
     if (url.pathname === "/api/feedback") {
@@ -565,7 +610,11 @@ export default {
         return handleFeedbackPost(request, env, ctx);
       }
 
-      return json({ ok: false, error: "Method not allowed." }, 405);
+      return json(
+        { ok: false, error: "Method not allowed." },
+        405,
+        { "Allow": "POST, OPTIONS" }
+      );
     }
 
     // The script is a bundled text module outside public/, so the ASSETS binding
