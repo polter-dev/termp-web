@@ -468,12 +468,15 @@ async function handleDownload(request, env, ctx, pathname) {
   const channel = segments[2];
   const os = segments[3];
   const arch = segments[4];
+  const hasExplicitVersion = segments.length === 6;
+  const explicitVersion = segments[5];
 
   if (
-    segments.length !== 5 ||
+    (segments.length !== 5 && !hasExplicitVersion) ||
     !DOWNLOAD_CHANNELS.has(channel) ||
     !DOWNLOAD_OSES.has(os) ||
-    !DOWNLOAD_ARCHES.has(arch)
+    !DOWNLOAD_ARCHES.has(arch) ||
+    (hasExplicitVersion && !isValidReleaseTag(explicitVersion))
   ) {
     return new Response("Not found.", { status: 404 });
   }
@@ -485,8 +488,12 @@ async function handleDownload(request, env, ctx, pathname) {
     });
   }
 
-  const version = await resolveLatestVersion();
-  if (version === UNRELEASED_VERSION && env.ENVIRONMENT === "production") {
+  const version = hasExplicitVersion ? explicitVersion : await resolveLatestVersion();
+  if (
+    !hasExplicitVersion &&
+    version === UNRELEASED_VERSION &&
+    env.ENVIRONMENT === "production"
+  ) {
     return new Response(request.method === "HEAD" ? null : "No release available.", {
       status: 503,
       headers: {
@@ -499,7 +506,7 @@ async function handleDownload(request, env, ctx, pathname) {
   const encodedVersion = encodeURIComponent(version);
   const encodedFilenameVersion = encodeURIComponent(version.replace(/^v/, ""));
   const target =
-    version === UNRELEASED_VERSION
+    !hasExplicitVersion && version === UNRELEASED_VERSION
       ? `/_test-assets/termp_${os}_${arch}.tar.gz`
       : `https://github.com/polter-dev/discord_terminal_presence/releases/download/${encodedVersion}/termp_${encodedFilenameVersion}_${os}_${arch}.tar.gz`;
 
