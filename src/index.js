@@ -1,8 +1,16 @@
+import installScript from "./install.sh";
+
 const MAX_JSON_BODY_BYTES = 16 * 1024;
 const MAX_MESSAGE_CHARS = 5000;
 const MAX_EMAIL_CHARS = 320;
 const MAX_CATEGORY_CHARS = 100;
 const MAX_TURNSTILE_TOKEN_CHARS = 2048;
+const LATEST_RELEASE_URL =
+  "https://api.github.com/repos/polter-dev/discord_terminal_presence/releases/latest";
+const LATEST_RELEASE_CACHE_KEY =
+  "https://termp.polter.sh/__termp_internal/latest-release-version";
+const LATEST_RELEASE_CACHE_TTL_SECONDS = 10 * 60;
+const UNRELEASED_VERSION = "unreleased";
 const FEEDBACK_FIELDS = new Set([
   "message",
   "category",
@@ -145,20 +153,30 @@ async function verifyTurnstile(token, secret, remoteIp, expectedAction, expected
   }
 }
 
-function discordFeedbackContent(message, email) {
-  const emailLine = email ? `\nemail: ${email}` : "";
-  const messageLimit = Math.max(0, 2000 - emailLine.length);
-
-  return message.slice(0, messageLimit) + emailLine;
+function coarseOsFromUserAgent(userAgent) {
+  if (/android/i.test(userAgent)) return "Android";
+  if (/(iphone|ipad|ipod)/i.test(userAgent)) return "iOS";
+  if (/windows/i.test(userAgent)) return "Windows";
+  if (/(macintosh|mac os x)/i.test(userAgent)) return "macOS";
+  if (/(linux|x11)/i.test(userAgent)) return "Linux";
+  return "Other";
 }
 
-async function postFeedbackToDiscord(webhookUrl, message, email) {
+function discordFeedbackContent(message, email, os) {
+  const osPrefix = `[${os}] `;
+  const emailLine = email ? `\nemail: ${email}` : "";
+  const messageLimit = Math.max(0, 2000 - osPrefix.length - emailLine.length);
+
+  return osPrefix + message.slice(0, messageLimit) + emailLine;
+}
+
+async function postFeedbackToDiscord(webhookUrl, message, email, os) {
   try {
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        content: discordFeedbackContent(message, email),
+        content: discordFeedbackContent(message, email, os),
         allowed_mentions: { parse: [] }
       })
     });
@@ -236,6 +254,7 @@ async function handleFeedbackPost(request, env, ctx) {
   const cleanMessage = message.trim();
   const cleanCategory = typeof category === "string" ? category.trim() || null : null;
   const cleanEmail = typeof email === "string" ? email.trim() || null : null;
+  const os = coarseOsFromUserAgent(request.headers.get("User-Agent") ?? "");
 
   if (!allowDevBypass) {
     if (
@@ -264,8 +283,8 @@ async function handleFeedbackPost(request, env, ctx) {
 
   try {
     await env.termp_feedback
-      .prepare("INSERT INTO feedback (category, message, email) VALUES (?, ?, ?)")
-      .bind(cleanCategory, cleanMessage, cleanEmail)
+      .prepare("INSERT INTO feedback (category, message, email, os) VALUES (?, ?, ?, ?)")
+      .bind(cleanCategory, cleanMessage, cleanEmail, os)
       .run();
   } catch (error) {
     console.error("Failed to store feedback in D1.", error);
@@ -275,12 +294,119 @@ async function handleFeedbackPost(request, env, ctx) {
   const discordWebhookUrl = env.DISCORD_WEBHOOK_URL;
 
   if (discordWebhookUrl) {
-    ctx.waitUntil(postFeedbackToDiscord(discordWebhookUrl, cleanMessage, cleanEmail));
+    ctx.waitUntil(postFeedbackToDiscord(discordWebhookUrl, cleanMessage, cleanEmail, os));
   } else {
     console.warn("Discord webhook skipped; DISCORD_WEBHOOK_URL is not configured.");
   }
 
   return json({ ok: true });
+}
+
+function isScriptClient(userAgent) {
+  const normalized = userAgent.toLowerCase();
+
+  if (/(bot|crawler|spider|slurp)/.test(normalized)) return false;
+  if (/(mozilla|chrome|chromium|safari|firefox|edg\/|opr\/)/.test(normalized)) return false;
+
+  return /\b(curl|wget|fetch)\b/.test(normalized);
+}
+
+async function cacheLatestVersion(cache, version) {
+  const response = new Response(version, {
+    headers: {
+      "Cache-Control": `public, max-age=${LATEST_RELEASE_CACHE_TTL_SECONDS}`,
+      "Content-Type": "text/plain; charset=utf-8"
+    }
+  });
+
+  try {
+    await cache.put(LATEST_RELEASE_CACHE_KEY, response);
+  } catch (error) {
+    console.error("Failed to cache the latest release version.", error);
+  }
+}
+
+async function resolveLatestVersion() {
+  const cache = caches.default;
+
+  try {
+    const cached = await cache.match(LATEST_RELEASE_CACHE_KEY);
+    if (cached) return await cached.text();
+  } catch (error) {
+    console.error("Failed to read the latest release version cache.", error);
+  }
+
+  let version = UNRELEASED_VERSION;
+
+  try {
+    const response = await fetch(LATEST_RELEASE_URL, {
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "termp-web-install-counter"
+      }
+    });
+
+    if (response.ok) {
+      const release = await response.json();
+      if (
+        release &&
+        typeof release === "object" &&
+        typeof release.tag_name === "string" &&
+        release.tag_name.length > 0 &&
+        release.tag_name.length <= 100
+      ) {
+        version = release.tag_name;
+      }
+    } else if (response.status !== 404) {
+      console.error(`Latest GitHub release lookup returned HTTP ${response.status}.`);
+    }
+  } catch (error) {
+    console.error("Latest GitHub release lookup failed.", error);
+  }
+
+  await cacheLatestVersion(cache, version);
+  return version;
+}
+
+async function countInstallFetch(env) {
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    const version = await resolveLatestVersion();
+
+    await env.termp_feedback
+      .prepare(
+        `INSERT INTO installs (day, version, count) VALUES (?, ?, 1)
+         ON CONFLICT(day, version) DO UPDATE SET count = count + 1`
+      )
+      .bind(day, version)
+      .run();
+  } catch (error) {
+    console.error("Failed to count install script fetch.", error);
+  }
+}
+
+function handleInstallScript(request, env, ctx) {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method not allowed.", {
+      status: 405,
+      headers: { "Allow": "GET, HEAD" }
+    });
+  }
+
+  if (
+    request.method === "GET" &&
+    isScriptClient(request.headers.get("User-Agent") ?? "")
+  ) {
+    ctx.waitUntil(countInstallFetch(env));
+  }
+
+  const headers = {
+    "Cache-Control": "no-store",
+    "Content-Type": "text/x-shellscript; charset=utf-8",
+    "X-Content-Type-Options": "nosniff"
+  };
+
+  return new Response(request.method === "HEAD" ? null : installScript, { headers });
 }
 
 export default {
@@ -323,6 +449,12 @@ export default {
       }
 
       return json({ ok: false, error: "Method not allowed." }, 405);
+    }
+
+    // The script is a bundled text module outside public/, so the ASSETS binding
+    // cannot expose an alternate URL that bypasses this counting route.
+    if (url.pathname === "/install.sh") {
+      return handleInstallScript(request, env, ctx);
     }
 
     return env.ASSETS.fetch(request);

@@ -6,6 +6,11 @@ compatibility_date = "2024-11-01"
 directory = "./public"
 binding = "ASSETS"
 
+[[rules]]
+type = "Text"
+globs = ["**/*.sh"]
+fallthrough = true
+
 [[d1_databases]]
 binding = "termp_feedback"
 database_name = "termp-feedback"
