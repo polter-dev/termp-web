@@ -7,7 +7,8 @@ The termp marketing site and contact-form backend, deployed together as a Cloudf
 - `public/` — static site, local fonts, and vendored browser runtimes
 - `public/logos/` — self-hosted flagship tool logos for Discord Terminal Presence
 - `public/contact.html` — contact form posting to `/api/contact`
-- `src/index.js` — Cloudflare Worker for contact and feedback submissions plus asset fallback
+- `src/index.js` — Cloudflare Worker for contact, feedback, and install-script requests plus asset fallback
+- `src/install.sh` — vendored install script bundled as a private Worker text module
 - `migrations/` — versioned D1 schema migrations
 - `wrangler.toml` — Cloudflare Workers configuration
 
@@ -68,3 +69,20 @@ Read the 20 most recent submissions with:
 npx wrangler d1 execute termp-feedback --remote \
   --command "SELECT created_at, category, message FROM feedback ORDER BY created_at DESC LIMIT 20"
 ```
+
+## Install script counter
+
+`GET /install.sh` serves the vendored shell script directly from the Worker; `HEAD`
+returns the same response headers without a body. The source file lives outside
+`public/`, so there is no static-asset URL that bypasses the canonical route.
+
+Eligible GETs from script clients such as curl, wget, and fetch increment the D1
+`installs` table by UTC day and version. The Worker resolves the current GitHub
+latest-release tag server-side and caches it for about 10 minutes; if no release
+exists or GitHub cannot be reached, it records `unreleased`. HEAD requests,
+browsers, and obvious crawlers are not counted.
+
+This is intentionally aggregate-only measurement. The table stores only
+`day`, `version`, and `count`; it does not store IP addresses, User-Agent strings,
+identifiers, or client telemetry, and the release binary never passes through the
+Worker.
