@@ -37,6 +37,13 @@ namespace_id = "1003"
   limit = 10
   period = 60
 
+[[ratelimits]]
+name = "COUNT_LIMITER"
+namespace_id = "1004"
+  [ratelimits.simple]
+  limit = 20
+  period = 60
+
 [vars]
 ENVIRONMENT = "production"
 TURNSTILE_EXPECTED_ACTION = "turnstile-spin-v2"

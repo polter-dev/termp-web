@@ -11,6 +11,9 @@ const LATEST_RELEASE_CACHE_KEY =
   "https://termp.polter.sh/__termp_internal/latest-release-version";
 const LATEST_RELEASE_CACHE_TTL_SECONDS = 10 * 60;
 const UNRELEASED_VERSION = "unreleased";
+const DOWNLOAD_CHANNELS = new Set(["curl", "brew", "update", "direct"]);
+const DOWNLOAD_OSES = new Set(["darwin", "linux"]);
+const DOWNLOAD_ARCHES = new Set(["amd64", "arm64"]);
 const FEEDBACK_FIELDS = new Set([
   "message",
   "category",
@@ -156,6 +159,7 @@ async function verifyTurnstile(token, secret, remoteIp, expectedAction, expected
 function coarseOsFromUserAgent(userAgent) {
   if (/android/i.test(userAgent)) return "Android";
   if (/(iphone|ipad|ipod)/i.test(userAgent)) return "iOS";
+  if (/macintosh/i.test(userAgent) && /(mobile|touch)/i.test(userAgent)) return "iOS";
   if (/windows/i.test(userAgent)) return "Windows";
   if (/(macintosh|mac os x)/i.test(userAgent)) return "macOS";
   if (/(linux|x11)/i.test(userAgent)) return "Linux";
@@ -302,10 +306,14 @@ async function handleFeedbackPost(request, env, ctx) {
   return json({ ok: true });
 }
 
+function isObviousBot(userAgent) {
+  return /(bot|crawler|spider|slurp)/i.test(userAgent);
+}
+
 function isScriptClient(userAgent) {
   const normalized = userAgent.toLowerCase();
 
-  if (/(bot|crawler|spider|slurp)/.test(normalized)) return false;
+  if (isObviousBot(normalized)) return false;
   if (/(mozilla|chrome|chromium|safari|firefox|edg\/|opr\/)/.test(normalized)) return false;
 
   return /\b(curl|wget|fetch)\b/.test(normalized);
@@ -368,8 +376,27 @@ async function resolveLatestVersion() {
   return version;
 }
 
-async function countInstallFetch(env) {
+async function countAllowed(request, env) {
   try {
+    const limiter = env.COUNT_LIMITER;
+    if (!limiter || typeof limiter.limit !== "function") {
+      console.error("Fetch counting skipped because COUNT_LIMITER is unavailable.");
+      return false;
+    }
+
+    const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
+    const { success } = await limiter.limit({ key: ip });
+    return success;
+  } catch (error) {
+    console.error("Fetch counting skipped because the rate-limit check failed.", error);
+    return false;
+  }
+}
+
+async function countInstallFetch(request, env) {
+  try {
+    if (!(await countAllowed(request, env))) return;
+
     const day = new Date().toISOString().slice(0, 10);
     const version = await resolveLatestVersion();
 
@@ -385,6 +412,26 @@ async function countInstallFetch(env) {
   }
 }
 
+async function countDownloadFetch(request, env, version, channel, os, arch) {
+  try {
+    if (!(await countAllowed(request, env))) return;
+
+    const day = new Date().toISOString().slice(0, 10);
+
+    await env.termp_feedback
+      .prepare(
+        `INSERT INTO downloads (day, version, channel, os, arch, count)
+         VALUES (?, ?, ?, ?, ?, 1)
+         ON CONFLICT(day, version, channel, os, arch)
+         DO UPDATE SET count = count + 1`
+      )
+      .bind(day, version, channel, os, arch)
+      .run();
+  } catch (error) {
+    console.error("Failed to count binary download.", error);
+  }
+}
+
 function handleInstallScript(request, env, ctx) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Method not allowed.", {
@@ -397,7 +444,7 @@ function handleInstallScript(request, env, ctx) {
     request.method === "GET" &&
     isScriptClient(request.headers.get("User-Agent") ?? "")
   ) {
-    ctx.waitUntil(countInstallFetch(env));
+    ctx.waitUntil(countInstallFetch(request, env));
   }
 
   const headers = {
@@ -407,6 +454,50 @@ function handleInstallScript(request, env, ctx) {
   };
 
   return new Response(request.method === "HEAD" ? null : installScript, { headers });
+}
+
+async function handleDownload(request, env, ctx, pathname) {
+  const segments = pathname.split("/");
+  const channel = segments[2];
+  const os = segments[3];
+  const arch = segments[4];
+
+  if (
+    segments.length !== 5 ||
+    !DOWNLOAD_CHANNELS.has(channel) ||
+    !DOWNLOAD_OSES.has(os) ||
+    !DOWNLOAD_ARCHES.has(arch)
+  ) {
+    return new Response("Not found.", { status: 404 });
+  }
+
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method not allowed.", {
+      status: 405,
+      headers: { "Allow": "GET, HEAD" }
+    });
+  }
+
+  const version = await resolveLatestVersion();
+  const target =
+    version === UNRELEASED_VERSION
+      ? `/_test-assets/termp_${os}_${arch}.tar.gz`
+      : `https://github.com/polter-dev/discord_terminal_presence/releases/download/${version}/termp_${version.replace(/^v/, "")}_${os}_${arch}.tar.gz`;
+
+  if (
+    request.method === "GET" &&
+    !isObviousBot(request.headers.get("User-Agent") ?? "")
+  ) {
+    ctx.waitUntil(countDownloadFetch(request, env, version, channel, os, arch));
+  }
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      "Cache-Control": "no-store",
+      "Location": target
+    }
+  });
 }
 
 export default {
@@ -455,6 +546,10 @@ export default {
     // cannot expose an alternate URL that bypasses this counting route.
     if (url.pathname === "/install.sh") {
       return handleInstallScript(request, env, ctx);
+    }
+
+    if (url.pathname === "/dl" || url.pathname.startsWith("/dl/")) {
+      return handleDownload(request, env, ctx, url.pathname);
     }
 
     return env.ASSETS.fetch(request);

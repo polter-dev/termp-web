@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS feedback (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   category   TEXT,
   message    TEXT NOT NULL,
-  email      TEXT
+  email      TEXT,
+  os         TEXT
 );
