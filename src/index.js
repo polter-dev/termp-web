@@ -1,4 +1,4 @@
-import installScript from "./install.sh";
+import installScript from "./install.txt";
 
 const MAX_JSON_BODY_BYTES = 16 * 1024;
 const MAX_MESSAGE_CHARS = 5000;

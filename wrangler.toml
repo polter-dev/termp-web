@@ -8,7 +8,7 @@ binding = "ASSETS"
 
 [[rules]]
 type = "Text"
-globs = ["**/*.sh"]
+globs = ["**/*.txt"]
 fallthrough = true
 
 [[d1_databases]]

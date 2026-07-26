@@ -8,7 +8,7 @@ The termp marketing site and contact-form backend, deployed together as a Cloudf
 - `public/logos/` — self-hosted flagship tool logos for Discord Terminal Presence
 - `public/contact.html` — contact form posting to `/api/contact`
 - `src/index.js` — Cloudflare Worker for contact, feedback, and install-script requests plus asset fallback
-- `src/install.sh` — vendored install script bundled as a private Worker text module
+- `src/install.txt` — vendored install script bundled as a private Worker text module
 - `migrations/` — versioned D1 schema migrations
 - `wrangler.toml` — Cloudflare Workers configuration
 
