@@ -10,6 +10,10 @@ const LATEST_RELEASE_URL =
 const LATEST_RELEASE_CACHE_KEY =
   "https://termp.polter.sh/__termp_internal/latest-release-version";
 const LATEST_RELEASE_CACHE_TTL_SECONDS = 10 * 60;
+const RELEASE_VERIFICATION_CACHE_KEY_PREFIX =
+  "https://termp.polter.sh/__termp_internal/verified-release-tag/";
+const VERIFIED_RELEASE_CACHE_TTL_SECONDS = 6 * 60 * 60;
+const REJECTED_RELEASE_CACHE_TTL_SECONDS = 60;
 const UNRELEASED_VERSION = "unreleased";
 const RELEASE_TAG_PATTERN = /^[0-9A-Za-z.+-]+$/;
 const CONTROL_CHARACTERS_PATTERN = /[\u0000-\u001F\u007F-\u009F]/g;
@@ -332,6 +336,12 @@ function isScriptClient(userAgent) {
   return /\b(curl|wget|fetch)\b/.test(normalized);
 }
 
+function isDownloadClient(channel, userAgent) {
+  return channel === "direct"
+    ? !isObviousBot(userAgent)
+    : isScriptClient(userAgent);
+}
+
 async function cacheLatestVersion(cache, version) {
   const response = new Response(version, {
     headers: {
@@ -353,6 +363,18 @@ function isValidReleaseTag(tag) {
     tag.length > 0 &&
     tag.length <= 100 &&
     RELEASE_TAG_PATTERN.test(tag)
+  );
+}
+
+function isPublishedNonPrereleaseRelease(release, expectedTag) {
+  return (
+    release &&
+    typeof release === "object" &&
+    release.tag_name === expectedTag &&
+    release.draft === false &&
+    release.prerelease === false &&
+    typeof release.published_at === "string" &&
+    Number.isFinite(Date.parse(release.published_at))
   );
 }
 
@@ -386,7 +408,10 @@ async function resolveLatestVersion() {
 
     if (response.ok) {
       const release = await response.json();
-      if (release && typeof release === "object" && isValidReleaseTag(release.tag_name)) {
+      if (
+        isValidReleaseTag(release?.tag_name) &&
+        isPublishedNonPrereleaseRelease(release, release.tag_name)
+      ) {
         await cacheLatestVersion(cache, release.tag_name);
         return release.tag_name;
       }
@@ -408,11 +433,81 @@ async function resolveLatestVersion() {
   return UNRELEASED_VERSION;
 }
 
-async function countAllowed(request, env) {
+async function cacheReleaseVerification(cache, version, verified) {
+  const ttl = verified
+    ? VERIFIED_RELEASE_CACHE_TTL_SECONDS
+    : REJECTED_RELEASE_CACHE_TTL_SECONDS;
+  const response = new Response(verified ? "ok" : "not-ok", {
+    headers: {
+      "Cache-Control": `public, max-age=${ttl}`,
+      "Content-Type": "text/plain; charset=utf-8"
+    }
+  });
+
   try {
-    const limiter = env.COUNT_LIMITER;
+    await cache.put(
+      `${RELEASE_VERIFICATION_CACHE_KEY_PREFIX}${encodeURIComponent(version)}`,
+      response
+    );
+  } catch (error) {
+    console.error("Failed to cache release-tag verification.", error);
+  }
+}
+
+async function isVerifiedPublishedRelease(version) {
+  const cache = caches.default;
+  const cacheKey =
+    `${RELEASE_VERIFICATION_CACHE_KEY_PREFIX}${encodeURIComponent(version)}`;
+
+  try {
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      const result = await cached.text();
+      if (result === "ok") return true;
+      if (result === "not-ok") return false;
+      console.error("Ignoring an invalid cached release-tag verification.");
+    }
+  } catch (error) {
+    console.error("Failed to read the release-tag verification cache.", error);
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/polter-dev/discord_terminal_presence/releases/tags/${encodeURIComponent(version)}`,
+      {
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "User-Agent": "termp-web-download-counter"
+        }
+      }
+    );
+
+    if (response.ok) {
+      const release = await response.json();
+      const verified = isPublishedNonPrereleaseRelease(release, version);
+      await cacheReleaseVerification(cache, version, verified);
+      return verified;
+    }
+
+    if (response.status === 404) {
+      await cacheReleaseVerification(cache, version, false);
+      return false;
+    }
+
+    console.error(`GitHub release-tag lookup returned HTTP ${response.status}.`);
+  } catch (error) {
+    console.error("GitHub release-tag lookup failed.", error);
+  }
+
+  return false;
+}
+
+async function countAllowed(request, limiter, counterName) {
+  try {
     if (!limiter || typeof limiter.limit !== "function") {
-      console.error("Fetch counting skipped because COUNT_LIMITER is unavailable.");
+      console.error(
+        `${counterName} counting skipped because its rate limiter is unavailable.`
+      );
       return false;
     }
 
@@ -427,7 +522,13 @@ async function countAllowed(request, env) {
 
 async function countInstallFetch(request, env) {
   try {
-    if (!(await countAllowed(request, env))) return;
+    if (
+      !(await countAllowed(
+        request,
+        env.INSTALL_COUNT_LIMITER,
+        "Install-script request"
+      ))
+    ) return;
 
     const day = new Date().toISOString().slice(0, 10);
     const version = await resolveLatestVersion();
@@ -444,36 +545,58 @@ async function countInstallFetch(request, env) {
   }
 }
 
+async function recordDownloadRequest(env, version, channel, os, arch) {
+  const day = new Date().toISOString().slice(0, 10);
+
+  await env.termp_feedback
+    .prepare(
+      `INSERT INTO downloads (day, version, channel, os, arch, count)
+       VALUES (?, ?, ?, ?, ?, 1)
+       ON CONFLICT(day, version, channel, os, arch)
+       DO UPDATE SET count = count + 1`
+    )
+    .bind(day, version, channel, os, arch)
+    .run();
+}
+
 async function countDownloadFetch(request, env, version, channel, os, arch) {
   try {
-    if (!(await countAllowed(request, env))) return;
+    if (
+      !(await countAllowed(
+        request,
+        env.DOWNLOAD_COUNT_LIMITER,
+        "Download request"
+      ))
+    ) return;
 
-    const day = new Date().toISOString().slice(0, 10);
-
-    await env.termp_feedback
-      .prepare(
-        `INSERT INTO downloads (day, version, channel, os, arch, count)
-         VALUES (?, ?, ?, ?, ?, 1)
-         ON CONFLICT(day, version, channel, os, arch)
-         DO UPDATE SET count = count + 1`
-      )
-      .bind(day, version, channel, os, arch)
-      .run();
+    await recordDownloadRequest(env, version, channel, os, arch);
   } catch (error) {
-    console.error("Failed to count binary download.", error);
+    console.error("Failed to count download request.", error);
   }
 }
 
-async function countExplicitDownloadIfLatest(request, env, version, channel, os, arch) {
-  const latestVersion = await resolveLatestVersion();
-  if (
-    latestVersion === UNRELEASED_VERSION ||
-    version !== latestVersion
-  ) {
-    return;
-  }
+async function countVerifiedExplicitDownload(
+  request,
+  env,
+  version,
+  channel,
+  os,
+  arch
+) {
+  try {
+    if (
+      !(await countAllowed(
+        request,
+        env.DOWNLOAD_COUNT_LIMITER,
+        "Download request"
+      ))
+    ) return;
+    if (!(await isVerifiedPublishedRelease(version))) return;
 
-  await countDownloadFetch(request, env, version, channel, os, arch);
+    await recordDownloadRequest(env, version, channel, os, arch);
+  } catch (error) {
+    console.error("Failed to count explicit-version download request.", error);
+  }
 }
 
 function handleInstallScript(request, env, ctx) {
@@ -549,11 +672,11 @@ async function handleDownload(request, env, ctx, pathname) {
 
   if (
     request.method === "GET" &&
-    !isObviousBot(request.headers.get("User-Agent") ?? "")
+    isDownloadClient(channel, request.headers.get("User-Agent") ?? "")
   ) {
     ctx.waitUntil(
       hasExplicitVersion
-        ? countExplicitDownloadIfLatest(request, env, version, channel, os, arch)
+        ? countVerifiedExplicitDownload(request, env, version, channel, os, arch)
         : countDownloadFetch(request, env, version, channel, os, arch)
     );
   }

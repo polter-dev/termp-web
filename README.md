@@ -86,3 +86,19 @@ This is intentionally aggregate-only measurement. The table stores only
 `day`, `version`, and `count`; it does not store IP addresses, User-Agent strings,
 identifiers, or client telemetry, and the release binary never passes through the
 Worker.
+
+## Download request counter
+
+`GET /dl/...` redirects eligible artifact requests to GitHub Releases. The D1
+`downloads` series counts these redirect requests, not completed artifact
+deliveries, so it is directional supporting detail. GitHub release asset
+`download_count` (reliable) is the authoritative, externally verifiable download
+figure.
+
+Script-oriented channels (`curl`, `brew`, and `update`) are counted only for
+script clients such as curl, wget, and fetch. The `direct` channel also serves
+browser downloads, so browsers remain eligible there while obvious bots are
+excluded. Explicit versions are counted only after GitHub confirms that the tag
+belongs to a published, non-prerelease release. Install-script requests and
+download requests use separate per-IP rate-limit budgets, and the aggregate
+tables never store those IP addresses.
