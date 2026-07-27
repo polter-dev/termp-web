@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const source = (
@@ -184,6 +184,45 @@ test("does not redirect or count a prerelease returned by the latest endpoint", 
   assert.equal(response.status, 503);
   await settle(ctx);
   assert.equal(env.termp_feedback.writes.length, 0);
+});
+
+test("does not redirect unreleased downloads to Worker assets", async () => {
+  const env = createEnv();
+  env.ENVIRONMENT = "development";
+  const ctx = createContext();
+  globalThis.fetch = async () => new Response("missing", { status: 404 });
+
+  const response = await worker.fetch(
+    request("/dl/curl/linux/amd64"),
+    env,
+    ctx
+  );
+
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("Location"), null);
+  assert.equal(await response.text(), "No release available.");
+  await settle(ctx);
+  assert.equal(env.termp_feedback.writes.length, 0);
+});
+
+test("excludes archive fixtures from the public asset directory", async () => {
+  const publicDirectory = new URL("../public/", import.meta.url);
+  const assetIgnore = await readFile(
+    new URL(".assetsignore", publicDirectory),
+    "utf8"
+  );
+  const publicEntries = await readdir(publicDirectory, {
+    recursive: true,
+    withFileTypes: true
+  });
+
+  assert.match(assetIgnore, /^\*\*\/\*\.tar\.gz$/m);
+  assert.equal(
+    publicEntries.some(
+      (entry) => entry.isFile() && entry.name.endsWith(".tar.gz")
+    ),
+    false
+  );
 });
 
 test("reuses a cached positive tag verification", async () => {
