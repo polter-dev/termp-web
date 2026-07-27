@@ -671,11 +671,7 @@ async function handleDownload(request, env, ctx, pathname) {
   }
 
   const version = hasExplicitVersion ? explicitVersion : await resolveLatestVersion();
-  if (
-    !hasExplicitVersion &&
-    version === UNRELEASED_VERSION &&
-    env.ENVIRONMENT === "production"
-  ) {
+  if (!hasExplicitVersion && version === UNRELEASED_VERSION) {
     return new Response(request.method === "HEAD" ? null : "No release available.", {
       status: 503,
       headers: {
@@ -687,10 +683,7 @@ async function handleDownload(request, env, ctx, pathname) {
 
   const encodedVersion = encodeURIComponent(version);
   const encodedFilenameVersion = encodeURIComponent(version.replace(/^v/, ""));
-  const target =
-    !hasExplicitVersion && version === UNRELEASED_VERSION
-      ? `/_test-assets/termp_${os}_${arch}.tar.gz`
-      : `https://github.com/polter-dev/discord_terminal_presence/releases/download/${encodedVersion}/termp_${encodedFilenameVersion}_${os}_${arch}.tar.gz`;
+  const target = `https://github.com/polter-dev/discord_terminal_presence/releases/download/${encodedVersion}/termp_${encodedFilenameVersion}_${os}_${arch}.tar.gz`;
 
   if (
     request.method === "GET" &&
