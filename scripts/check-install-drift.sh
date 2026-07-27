@@ -7,9 +7,12 @@ downloaded_script=$(mktemp "${TMPDIR:-/tmp}/termp-install.XXXXXX")
 
 trap 'rm -f "$downloaded_script"' EXIT HUP INT TERM
 
-curl --fail --silent --show-error --location \
+if ! curl --fail --silent --show-error --location \
   "$canonical_url" \
-  --output "$downloaded_script"
+  --output "$downloaded_script"; then
+  echo "Failed to download canonical installer from $canonical_url" >&2
+  exit 1
+fi
 
 if ! diff -u "$repo_root/src/install.txt" "$downloaded_script"; then
   echo "Vendored install script has drifted from $canonical_url" >&2
