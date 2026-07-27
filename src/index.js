@@ -14,8 +14,10 @@ const RELEASE_VERIFICATION_CACHE_KEY_PREFIX =
   "https://termp.polter.sh/__termp_internal/verified-release-tag/";
 const VERIFIED_RELEASE_CACHE_TTL_SECONDS = 6 * 60 * 60;
 const REJECTED_RELEASE_CACHE_TTL_SECONDS = 60;
+const TRANSIENT_RELEASE_CACHE_TTL_SECONDS = 15;
 const UNRELEASED_VERSION = "unreleased";
 const RELEASE_TAG_PATTERN = /^[0-9A-Za-z.+-]+$/;
+const releaseVerificationLookups = new Map();
 const CONTROL_CHARACTERS_PATTERN = /[\u0000-\u001F\u007F-\u009F]/g;
 const DOWNLOAD_CHANNELS = new Set(["curl", "brew", "update", "direct"]);
 const DOWNLOAD_OSES = new Set(["darwin", "linux"]);
@@ -433,11 +435,14 @@ async function resolveLatestVersion() {
   return UNRELEASED_VERSION;
 }
 
-async function cacheReleaseVerification(cache, version, verified) {
-  const ttl = verified
-    ? VERIFIED_RELEASE_CACHE_TTL_SECONDS
-    : REJECTED_RELEASE_CACHE_TTL_SECONDS;
-  const response = new Response(verified ? "ok" : "not-ok", {
+async function cacheReleaseVerification(cache, version, result) {
+  const ttl =
+    result === "ok"
+      ? VERIFIED_RELEASE_CACHE_TTL_SECONDS
+      : result === "not-ok"
+        ? REJECTED_RELEASE_CACHE_TTL_SECONDS
+        : TRANSIENT_RELEASE_CACHE_TTL_SECONDS;
+  const response = new Response(result, {
     headers: {
       "Cache-Control": `public, max-age=${ttl}`,
       "Content-Type": "text/plain; charset=utf-8"
@@ -454,23 +459,7 @@ async function cacheReleaseVerification(cache, version, verified) {
   }
 }
 
-async function isVerifiedPublishedRelease(version) {
-  const cache = caches.default;
-  const cacheKey =
-    `${RELEASE_VERIFICATION_CACHE_KEY_PREFIX}${encodeURIComponent(version)}`;
-
-  try {
-    const cached = await cache.match(cacheKey);
-    if (cached) {
-      const result = await cached.text();
-      if (result === "ok") return true;
-      if (result === "not-ok") return false;
-      console.error("Ignoring an invalid cached release-tag verification.");
-    }
-  } catch (error) {
-    console.error("Failed to read the release-tag verification cache.", error);
-  }
-
+async function lookupPublishedRelease(cache, version) {
   try {
     const response = await fetch(
       `https://api.github.com/repos/polter-dev/discord_terminal_presence/releases/tags/${encodeURIComponent(version)}`,
@@ -485,12 +474,12 @@ async function isVerifiedPublishedRelease(version) {
     if (response.ok) {
       const release = await response.json();
       const verified = isPublishedNonPrereleaseRelease(release, version);
-      await cacheReleaseVerification(cache, version, verified);
+      await cacheReleaseVerification(cache, version, verified ? "ok" : "not-ok");
       return verified;
     }
 
     if (response.status === 404) {
-      await cacheReleaseVerification(cache, version, false);
+      await cacheReleaseVerification(cache, version, "not-ok");
       return false;
     }
 
@@ -499,7 +488,40 @@ async function isVerifiedPublishedRelease(version) {
     console.error("GitHub release-tag lookup failed.", error);
   }
 
+  await cacheReleaseVerification(cache, version, "transient-error");
   return false;
+}
+
+async function isVerifiedPublishedRelease(version) {
+  const cache = caches.default;
+  const cacheKey =
+    `${RELEASE_VERIFICATION_CACHE_KEY_PREFIX}${encodeURIComponent(version)}`;
+
+  try {
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      const result = await cached.text();
+      if (result === "ok") return true;
+      if (result === "not-ok" || result === "transient-error") return false;
+      console.error("Ignoring an invalid cached release-tag verification.");
+    }
+  } catch (error) {
+    console.error("Failed to read the release-tag verification cache.", error);
+  }
+
+  const pendingLookup = releaseVerificationLookups.get(version);
+  if (pendingLookup) return pendingLookup;
+
+  const lookup = lookupPublishedRelease(cache, version);
+  releaseVerificationLookups.set(version, lookup);
+
+  try {
+    return await lookup;
+  } finally {
+    if (releaseVerificationLookups.get(version) === lookup) {
+      releaseVerificationLookups.delete(version);
+    }
+  }
 }
 
 async function countAllowed(request, limiter, counterName) {

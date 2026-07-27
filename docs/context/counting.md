@@ -13,6 +13,8 @@ An explicit `/dl/.../<tag>` request is recorded only when GitHub's release-by-ta
 API verifies an exact matching release that is published, non-draft, and not a
 prerelease. Verified and rejected tags are cached per colo; rejected tags have a
 short TTL so a tag requested just before publication is rechecked quickly.
+Transient GitHub failures use a distinct, shorter cache entry, and concurrent
+verification requests for the same tag share one in-flight lookup per isolate.
 Verification runs in `waitUntil`, so failures neither delay nor block redirects.
 
 Install-script and download-request counting use separate 100-per-minute,
