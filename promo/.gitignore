@@ -1,0 +1,6 @@
+# Generated demo artifacts — regenerate with `node build-demo.mjs`
+frames/
+presence-demo.gif
+presence-demo.mp4
+presence-demo.png
+palette.png
