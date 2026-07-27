@@ -7,15 +7,32 @@ const source = (
 ).replace('import installScript from "./install.txt";', 'const installScript = "install";');
 const worker = (await import(`data:text/javascript,${encodeURIComponent(source)}`)).default;
 
-function createCache() {
+function createCache(now = () => 0) {
   const entries = new Map();
+  const cachedAt = new Map();
   return {
     entries,
     async match(key) {
-      return entries.get(String(key))?.clone();
+      const cacheKey = String(key);
+      const response = entries.get(cacheKey);
+      if (!response) return undefined;
+
+      const maxAge = Number.parseInt(
+        response.headers.get("Cache-Control")?.match(/max-age=(\d+)/)?.[1] ?? "",
+        10
+      );
+      if (Number.isFinite(maxAge) && now() - cachedAt.get(cacheKey) >= maxAge * 1000) {
+        entries.delete(cacheKey);
+        cachedAt.delete(cacheKey);
+        return undefined;
+      }
+
+      return response.clone();
     },
     async put(key, response) {
-      entries.set(String(key), response.clone());
+      const cacheKey = String(key);
+      entries.set(cacheKey, response.clone());
+      cachedAt.set(cacheKey, now());
     }
   };
 }
@@ -203,6 +220,54 @@ test("does not redirect unreleased downloads to Worker assets", async () => {
   assert.equal(await response.text(), "No release available.");
   await settle(ctx);
   assert.equal(env.termp_feedback.writes.length, 0);
+});
+
+test("briefly caches unreleased before picking up a newly published release", async () => {
+  let now = 0;
+  const cache = createCache(() => now);
+  globalThis.caches = { default: cache };
+  const env = createEnv();
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return fetches === 1
+      ? new Response("missing", { status: 404 })
+      : Response.json(release("v1.0.0"));
+  };
+
+  const unreleasedResponse = await worker.fetch(
+    request("/dl/curl/linux/amd64"),
+    env,
+    createContext()
+  );
+
+  assert.equal(unreleasedResponse.status, 503);
+  assert.equal(fetches, 1);
+  const negativeEntry = [...cache.entries.values()][0];
+  const negativeTtl = Number.parseInt(
+    negativeEntry.headers.get("Cache-Control").match(/max-age=(\d+)/)[1],
+    10
+  );
+
+  now += (negativeTtl + 1) * 1000;
+  const publishedResponse = await worker.fetch(
+    request("/dl/curl/linux/amd64"),
+    env,
+    createContext()
+  );
+
+  assert.equal(publishedResponse.status, 302);
+  assert.match(publishedResponse.headers.get("Location"), /\/v1\.0\.0\//);
+  assert.equal(fetches, 2);
+  const positiveEntry = [...cache.entries.values()][0];
+  const positiveTtl = Number.parseInt(
+    positiveEntry.headers.get("Cache-Control").match(/max-age=(\d+)/)[1],
+    10
+  );
+  assert.ok(
+    negativeTtl <= positiveTtl / 10,
+    `expected negative TTL ${negativeTtl}s to be materially shorter than positive TTL ${positiveTtl}s`
+  );
 });
 
 test("excludes archive fixtures from the public asset directory", async () => {

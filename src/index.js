@@ -16,6 +16,7 @@ const VERIFIED_RELEASE_CACHE_TTL_SECONDS = 6 * 60 * 60;
 const REJECTED_RELEASE_CACHE_TTL_SECONDS = 60;
 const TRANSIENT_RELEASE_CACHE_TTL_SECONDS = 15;
 const UNRELEASED_VERSION = "unreleased";
+const UNRELEASED_CACHE_TTL_SECONDS = 30;
 const RELEASE_TAG_PATTERN = /^[0-9A-Za-z.+-]+$/;
 const releaseVerificationLookups = new Map();
 const CONTROL_CHARACTERS_PATTERN = /[\u0000-\u001F\u007F-\u009F]/g;
@@ -345,9 +346,13 @@ function isDownloadClient(channel, userAgent) {
 }
 
 async function cacheLatestVersion(cache, version) {
+  const ttl =
+    version === UNRELEASED_VERSION
+      ? UNRELEASED_CACHE_TTL_SECONDS
+      : LATEST_RELEASE_CACHE_TTL_SECONDS;
   const response = new Response(version, {
     headers: {
-      "Cache-Control": `public, max-age=${LATEST_RELEASE_CACHE_TTL_SECONDS}`,
+      "Cache-Control": `public, max-age=${ttl}`,
       "Content-Type": "text/plain; charset=utf-8"
     }
   });
