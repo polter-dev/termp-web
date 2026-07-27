@@ -206,6 +206,9 @@ test("reuses a cached positive tag verification", async () => {
 
   assert.equal(fetches, 1);
   assert.equal(env.termp_feedback.writes.length, 2);
+  const cached = [...globalThis.caches.default.entries.values()][0];
+  assert.equal(await cached.text(), "ok");
+  assert.equal(cached.headers.get("Cache-Control"), "public, max-age=21600");
 });
 
 test("reuses a cached rejection without counting the tag", async () => {
@@ -228,6 +231,90 @@ test("reuses a cached rejection without counting the tag", async () => {
 
   assert.equal(fetches, 1);
   assert.equal(env.termp_feedback.writes.length, 0);
+  const cached = [...globalThis.caches.default.entries.values()][0];
+  assert.equal(await cached.text(), "not-ok");
+  assert.equal(cached.headers.get("Cache-Control"), "public, max-age=60");
+});
+
+test("briefly caches a transient GitHub failure", async () => {
+  const env = createEnv();
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return new Response("rate limited", { status: 403 });
+  };
+
+  for (let index = 0; index < 2; index += 1) {
+    const ctx = createContext();
+    await worker.fetch(
+      request("/dl/curl/linux/amd64/v1.2.4"),
+      env,
+      ctx
+    );
+    await settle(ctx);
+  }
+
+  assert.equal(fetches, 1);
+  assert.equal(env.termp_feedback.writes.length, 0);
+  const cached = [...globalThis.caches.default.entries.values()][0];
+  assert.equal(await cached.text(), "transient-error");
+  assert.equal(cached.headers.get("Cache-Control"), "public, max-age=15");
+});
+
+test("still refuses published prereleases and drafts", async () => {
+  for (const overrides of [{ prerelease: true }, { draft: true }]) {
+    globalThis.caches = { default: createCache() };
+    const env = createEnv();
+    const ctx = createContext();
+    globalThis.fetch = async () =>
+      Response.json(release("v2.0.0", overrides));
+
+    await worker.fetch(
+      request("/dl/curl/linux/amd64/v2.0.0"),
+      env,
+      ctx
+    );
+    await settle(ctx);
+
+    assert.equal(env.termp_feedback.writes.length, 0);
+    const cached = [...globalThis.caches.default.entries.values()][0];
+    assert.equal(await cached.text(), "not-ok");
+  }
+});
+
+test("coalesces concurrent verification lookups for the same tag", async () => {
+  const env = createEnv();
+  const firstCtx = createContext();
+  const secondCtx = createContext();
+  let fetches = 0;
+  let resolveLookup;
+  globalThis.fetch = () => {
+    fetches += 1;
+    return new Promise((resolve) => {
+      resolveLookup = resolve;
+    });
+  };
+
+  const responses = await Promise.all([
+    worker.fetch(
+      request("/dl/curl/linux/amd64/v3.0.0"),
+      env,
+      firstCtx
+    ),
+    worker.fetch(
+      request("/dl/update/linux/amd64/v3.0.0", "wget/1.21"),
+      env,
+      secondCtx
+    )
+  ]);
+
+  assert.deepEqual(responses.map(({ status }) => status), [302, 302]);
+  await Promise.resolve();
+  assert.equal(fetches, 1);
+
+  resolveLookup(Response.json(release("v3.0.0")));
+  await Promise.all([settle(firstCtx), settle(secondCtx)]);
+  assert.equal(env.termp_feedback.writes.length, 2);
 });
 
 test("uses script filtering except for legitimate direct browser requests", async () => {
