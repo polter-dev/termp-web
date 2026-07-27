@@ -448,6 +448,221 @@ test("uses script filtering except for legitimate direct browser requests", asyn
   }
 });
 
+function asset(name, downloadCount) {
+  return { name, download_count: downloadCount };
+}
+
+// Real artifact names from `goreleaser release --snapshot` (2026-07-27), plus
+// the release-only extras. This fixture is the drift lock shared with the
+// dashboard's fetch-stats.sh asset pattern: both must count exactly the
+// tar.gz/zip archives and the nfpm deb/rpm packages, and nothing else.
+const COUNTED_ASSETS = [
+  asset("termp_1.0.0_darwin_amd64.tar.gz", 1),
+  asset("termp_1.0.0_darwin_arm64.tar.gz", 2),
+  asset("termp_1.0.0_linux_amd64.tar.gz", 4),
+  asset("termp_1.0.0_linux_arm64.tar.gz", 8),
+  asset("termp_1.0.0_windows_amd64.zip", 16),
+  asset("termp_1.0.0_windows_arm64.zip", 32),
+  asset("termp_1.0.0_linux_amd64.deb", 64),
+  asset("termp_1.0.0_linux_arm64.deb", 128),
+  asset("termp_1.0.0_linux_amd64.rpm", 256),
+  asset("termp_1.0.0_linux_arm64.rpm", 512)
+];
+const COUNTED_TOTAL = 1023;
+const IGNORED_ASSETS = [
+  asset("checksums.txt", 9001),
+  asset("termp.rb", 9001),
+  asset("termp-1.0.0.tar.gz", 9001),
+  asset("Source code (zip)", 9001)
+];
+
+function snapshotDay() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function runScheduled(env) {
+  const ctx = createContext();
+  await worker.scheduled({ cron: "50 23 * * *" }, env, ctx);
+  await settle(ctx);
+}
+
+test("scheduled snapshot records the full stable-release download total", async () => {
+  const env = createEnv();
+  const requested = [];
+  globalThis.fetch = async (url) => {
+    requested.push(String(url));
+    return Response.json([
+      release("v1.0.0", { assets: [...COUNTED_ASSETS, ...IGNORED_ASSETS] }),
+      release("v2.0.0-rc.1", {
+        prerelease: true,
+        assets: [asset("termp_2.0.0-rc.1_linux_amd64.tar.gz", 9001)]
+      }),
+      release("v3.0.0", {
+        draft: true,
+        assets: [asset("termp_3.0.0_linux_amd64.tar.gz", 9001)]
+      })
+    ]);
+  };
+
+  await runScheduled(env);
+
+  assert.equal(requested.length, 1);
+  assert.match(requested[0], /\/releases\?per_page=100&page=1$/);
+  assert.equal(env.termp_feedback.writes.length, 1);
+  const write = env.termp_feedback.writes[0];
+  assert.match(write.sql, /INSERT INTO github_download_snapshots/);
+  assert.match(write.sql, /ON CONFLICT\(day\) DO UPDATE/);
+  assert.deepEqual(write.values, [snapshotDay(), COUNTED_TOTAL, "v1.0.0"]);
+});
+
+test("scheduled snapshot re-run upserts the same day instead of duplicating it", async () => {
+  const env = createEnv();
+  const table = new Map();
+  env.termp_feedback = {
+    prepare(sql) {
+      return {
+        bind(day, total, latestTag) {
+          return {
+            async run() {
+              assert.match(sql, /ON CONFLICT\(day\) DO UPDATE/);
+              table.set(day, { total, latestTag });
+            }
+          };
+        }
+      };
+    }
+  };
+  let downloads = 5;
+  globalThis.fetch = async () =>
+    Response.json([
+      release("v1.0.0", { assets: [asset("termp_1.0.0_linux_amd64.deb", downloads)] })
+    ]);
+
+  await runScheduled(env);
+  downloads = 7;
+  await runScheduled(env);
+
+  assert.equal(table.size, 1);
+  assert.deepEqual(table.get(snapshotDay()), { total: 7, latestTag: "v1.0.0" });
+});
+
+test("scheduled snapshot sums releases across pagination", async () => {
+  const env = createEnv();
+  const pages = [];
+  globalThis.fetch = async (url) => {
+    pages.push(String(url));
+    if (pages.length === 1) {
+      return Response.json(
+        Array.from({ length: 100 }, (_, index) =>
+          release(`v1.0.${index}`, {
+            published_at: `2026-07-01T00:00:${String(index % 60).padStart(2, "0")}Z`,
+            assets: [asset(`termp_1.0.${index}_linux_amd64.rpm`, 1)]
+          })
+        )
+      );
+    }
+    return Response.json([
+      release("v2.0.0", {
+        published_at: "2026-07-27T00:00:00Z",
+        assets: [asset("termp_2.0.0_linux_amd64.deb", 10)]
+      })
+    ]);
+  };
+
+  await runScheduled(env);
+
+  assert.equal(pages.length, 2);
+  assert.match(pages[1], /page=2$/);
+  assert.equal(env.termp_feedback.writes.length, 1);
+  assert.deepEqual(env.termp_feedback.writes[0].values, [snapshotDay(), 110, "v2.0.0"]);
+});
+
+test("scheduled snapshot writes a genuine zero total from a verified empty history", async () => {
+  const env = createEnv();
+  globalThis.fetch = async () => Response.json([]);
+
+  await runScheduled(env);
+
+  assert.equal(env.termp_feedback.writes.length, 1);
+  assert.deepEqual(env.termp_feedback.writes[0].values, [snapshotDay(), 0, null]);
+});
+
+test("scheduled snapshot writes nothing when the GitHub fetch fails", async () => {
+  for (const failure of [
+    async () => new Response("rate limited", { status: 403 }),
+    async () => new Response("down", { status: 503 }),
+    async () => Response.json({ message: "not an array" }),
+    async () => new Response("not json", { status: 200 }),
+    async () => {
+      throw new Error("network unreachable");
+    },
+    async () =>
+      Response.json([
+        release("v1.0.0", {
+          assets: [asset("termp_1.0.0_linux_amd64.deb", "corrupt")]
+        })
+      ])
+  ]) {
+    const env = createEnv();
+    globalThis.fetch = failure;
+
+    await runScheduled(env);
+
+    assert.equal(
+      env.termp_feedback.writes.length,
+      0,
+      "a failed fetch must write nothing — never a zero or partial total"
+    );
+  }
+});
+
+test("scheduled snapshot writes nothing when a later pagination page fails", async () => {
+  const env = createEnv();
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    if (fetches === 1) {
+      return Response.json(
+        Array.from({ length: 100 }, (_, index) =>
+          release(`v1.0.${index}`, {
+            assets: [asset(`termp_1.0.${index}_linux_amd64.tar.gz`, 1)]
+          })
+        )
+      );
+    }
+    return new Response("rate limited", { status: 403 });
+  };
+
+  await runScheduled(env);
+
+  assert.equal(fetches, 2);
+  assert.equal(
+    env.termp_feedback.writes.length,
+    0,
+    "a partial pagination result must never be recorded"
+  );
+});
+
+test("scheduled snapshot degrades safely when the table is missing", async () => {
+  const env = createEnv();
+  env.termp_feedback = {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async run() {
+              throw new Error("D1_ERROR: no such table: github_download_snapshots");
+            }
+          };
+        }
+      };
+    }
+  };
+  globalThis.fetch = async () => Response.json([release("v1.0.0", { assets: COUNTED_ASSETS })]);
+
+  await runScheduled(env);
+});
+
 test("uses separate fail-closed limiter bindings", async () => {
   const env = createEnv();
   globalThis.fetch = async (url) => {

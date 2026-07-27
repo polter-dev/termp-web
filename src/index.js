@@ -7,6 +7,17 @@ const MAX_CATEGORY_CHARS = 100;
 const MAX_TURNSTILE_TOKEN_CHARS = 2048;
 const LATEST_RELEASE_URL =
   "https://api.github.com/repos/polter-dev/discord_terminal_presence/releases/latest";
+const RELEASES_LIST_URL =
+  "https://api.github.com/repos/polter-dev/discord_terminal_presence/releases";
+const RELEASES_PAGE_SIZE = 100;
+const RELEASES_MAX_PAGES = 20;
+// Assets counted toward the headline GitHub download total. Must stay identical
+// to the pattern in the private dashboard's fetch-stats.sh (jq and python paths).
+// Locked by the "counts only released binary assets" fixture test; verified
+// against real goreleaser output (archives and nfpm deb/rpm share the
+// termp_VERSION_OS_ARCH.ext template). checksums.txt, termp.rb, and source
+// archives must never match.
+const RELEASE_ASSET_NAME_PATTERN = /^termp_[^_]+_[^_]+_[^_]+\.(tar\.gz|zip|deb|rpm)$/;
 const LATEST_RELEASE_CACHE_KEY =
   "https://termp.polter.sh/__termp_internal/latest-release-version";
 const LATEST_RELEASE_CACHE_TTL_SECONDS = 10 * 60;
@@ -710,7 +721,125 @@ async function handleDownload(request, env, ctx, pathname) {
   });
 }
 
+function isCountedRelease(release) {
+  // Same counting rule as the dashboard: stable releases only. Drafts are
+  // invisible to unauthenticated requests anyway, but exclude them explicitly.
+  return (
+    release &&
+    typeof release === "object" &&
+    release.draft !== true &&
+    release.prerelease !== true
+  );
+}
+
+function countedAssetDownloads(release) {
+  let downloads = 0;
+  const assets = Array.isArray(release.assets) ? release.assets : [];
+
+  for (const asset of assets) {
+    if (!asset || typeof asset !== "object") continue;
+    if (!RELEASE_ASSET_NAME_PATTERN.test(asset.name ?? "")) continue;
+
+    const count = asset.download_count ?? 0;
+    if (!Number.isInteger(count) || count < 0) {
+      throw new Error("GitHub returned a non-integer asset download_count.");
+    }
+
+    downloads += count;
+  }
+
+  return downloads;
+}
+
+// Returns { total, latestTag } only when every page was fetched and validated.
+// Throws on any failure — a partial or unverified total must never be recorded,
+// because a fake datapoint (especially a fake 0) would poison the history forever.
+async function fetchGithubDownloadTotal() {
+  let total = 0;
+  let latestTag = null;
+  let latestPublishedAt = "";
+
+  for (let page = 1; ; page += 1) {
+    if (page > RELEASES_MAX_PAGES) {
+      throw new Error("GitHub releases pagination exceeded the sanity limit.");
+    }
+
+    const response = await fetch(
+      `${RELEASES_LIST_URL}?per_page=${RELEASES_PAGE_SIZE}&page=${page}`,
+      {
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "User-Agent": "termp-web-download-snapshot"
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`GitHub releases list returned HTTP ${response.status}.`);
+    }
+
+    const releases = await response.json();
+    if (!Array.isArray(releases)) {
+      throw new Error("GitHub releases list was not an array.");
+    }
+
+    for (const release of releases) {
+      if (!isCountedRelease(release)) continue;
+
+      total += countedAssetDownloads(release);
+
+      const publishedAt =
+        typeof release.published_at === "string" ? release.published_at : "";
+      if (isValidReleaseTag(release.tag_name) && publishedAt > latestPublishedAt) {
+        latestPublishedAt = publishedAt;
+        latestTag = release.tag_name;
+      }
+    }
+
+    if (releases.length < RELEASES_PAGE_SIZE) break;
+  }
+
+  return { total, latestTag };
+}
+
+async function recordGithubDownloadSnapshot(env) {
+  let snapshot;
+
+  try {
+    snapshot = await fetchGithubDownloadTotal();
+  } catch (error) {
+    // CRITICAL: write nothing on failure. A gap is honest; a fake 0 is not.
+    console.error("Skipped the GitHub download snapshot; nothing was written.", error);
+    return;
+  }
+
+  try {
+    if (!env.termp_feedback || typeof env.termp_feedback.prepare !== "function") {
+      throw new Error("The termp_feedback D1 binding is unavailable.");
+    }
+
+    const day = new Date().toISOString().slice(0, 10);
+    await env.termp_feedback
+      .prepare(
+        `INSERT INTO github_download_snapshots (day, total, latest_tag)
+         VALUES (?, ?, ?)
+         ON CONFLICT(day) DO UPDATE
+         SET total = excluded.total, latest_tag = excluded.latest_tag`
+      )
+      .bind(day, snapshot.total, snapshot.latestTag)
+      .run();
+  } catch (error) {
+    // Degrade safely when the migration has not been applied yet (missing
+    // table) or D1 is unavailable: log and leave a gap for the day.
+    console.error("Failed to store the GitHub download snapshot.", error);
+  }
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(recordGithubDownloadSnapshot(env));
+  },
+
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 

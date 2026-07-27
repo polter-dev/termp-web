@@ -2,6 +2,12 @@ name = "termp-web"
 main = "src/index.js"
 compatibility_date = "2024-11-01"
 
+# Daily GitHub download-total snapshot, near the end of the UTC day so each
+# row approximates that day's closing cumulative total. A run delayed past
+# midnight records under the new day; the missed day stays an honest gap.
+[triggers]
+crons = ["50 23 * * *"]
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
