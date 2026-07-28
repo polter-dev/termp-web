@@ -492,8 +492,11 @@ async function resolveLatestVersion(githubToken, useLastKnownGoodOnFailure = fal
     }
 
     console.error(`Latest GitHub release lookup returned HTTP ${response.status}.`);
-  } catch {
-    console.error("Latest GitHub release lookup failed.");
+  } catch (error) {
+    console.error(
+      "Latest GitHub release lookup failed.",
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   if (useLastKnownGoodOnFailure) {
@@ -550,8 +553,11 @@ async function lookupPublishedRelease(cache, version, githubToken) {
     }
 
     console.error(`GitHub release-tag lookup returned HTTP ${response.status}.`);
-  } catch {
-    console.error("GitHub release-tag lookup failed.");
+  } catch (error) {
+    console.error(
+      "GitHub release-tag lookup failed.",
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   await cacheReleaseVerification(cache, version, "transient-error");
@@ -856,9 +862,12 @@ async function recordGithubDownloadSnapshot(env) {
 
   try {
     snapshot = await fetchGithubDownloadTotal(env.GITHUB_TOKEN);
-  } catch {
+  } catch (error) {
     // CRITICAL: write nothing on failure. A gap is honest; a fake 0 is not.
-    console.error("Skipped the GitHub download snapshot; nothing was written.");
+    console.error(
+      "Skipped the GitHub download snapshot; nothing was written.",
+      error instanceof Error ? error.message : String(error)
+    );
     return;
   }
 

@@ -359,6 +359,37 @@ test("does not redirect unreleased downloads to Worker assets", async () => {
   assert.equal(env.termp_feedback.writes.length, 0);
 });
 
+test("does not redirect latest downloads to a stale last-known-good release", async () => {
+  let now = 0;
+  globalThis.caches = { default: createCache(() => now) };
+  const env = createEnv();
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return fetches === 1
+      ? Response.json(release("v1.2.3"))
+      : new Response("rate limited", { status: 403 });
+  };
+
+  const installCtx = createContext();
+  await worker.fetch(request("/install.sh"), env, installCtx);
+  await settle(installCtx);
+
+  now += 11 * 60 * 1000;
+  const downloadCtx = createContext();
+  const response = await worker.fetch(
+    request("/dl/curl/linux/amd64"),
+    env,
+    downloadCtx
+  );
+
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("Location"), null);
+  await settle(downloadCtx);
+  assert.equal(fetches, 2);
+  assert.equal(env.termp_feedback.writes.length, 1);
+});
+
 test("briefly caches unreleased before picking up a newly published release", async () => {
   let now = 0;
   const cache = createCache(() => now);
