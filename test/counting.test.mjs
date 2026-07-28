@@ -113,6 +113,143 @@ test.beforeEach(() => {
   globalThis.caches = { default: createCache() };
 });
 
+test("authenticates GitHub release lookups when the token is configured", async () => {
+  const env = createEnv();
+  env.GITHUB_TOKEN = "test-token";
+  const requests = [];
+  globalThis.fetch = async (url, init) => {
+    requests.push({ url: String(url), headers: init.headers });
+    const tag = String(url).endsWith("/latest")
+      ? "v1.0.0"
+      : decodeURIComponent(String(url).split("/").at(-1));
+    return Response.json(release(tag));
+  };
+
+  const installCtx = createContext();
+  await worker.fetch(request("/install.sh"), env, installCtx);
+  await settle(installCtx);
+
+  const downloadCtx = createContext();
+  await worker.fetch(
+    request("/dl/curl/linux/amd64/v1.0.0"),
+    env,
+    downloadCtx
+  );
+  await settle(downloadCtx);
+
+  assert.equal(requests.length, 2);
+  assert.deepEqual(
+    requests.map(({ headers }) => headers.Authorization),
+    ["Bearer test-token", "Bearer test-token"]
+  );
+});
+
+test("keeps GitHub release lookup headers unchanged when the token is absent", async () => {
+  const env = createEnv();
+  const requests = [];
+  globalThis.fetch = async (url, init) => {
+    requests.push({ url: String(url), headers: init.headers });
+    const tag = String(url).endsWith("/latest")
+      ? "v1.0.0"
+      : decodeURIComponent(String(url).split("/").at(-1));
+    return Response.json(release(tag));
+  };
+
+  const installCtx = createContext();
+  await worker.fetch(request("/install.sh"), env, installCtx);
+  await settle(installCtx);
+
+  const downloadCtx = createContext();
+  await worker.fetch(
+    request("/dl/curl/linux/amd64/v1.0.0"),
+    env,
+    downloadCtx
+  );
+  await settle(downloadCtx);
+
+  assert.deepEqual(
+    requests.map(({ headers }) => headers),
+    [
+      {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "termp-web-install-counter"
+      },
+      {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "termp-web-download-counter"
+      }
+    ]
+  );
+});
+
+test("attributes install lookup failures to the last-known-good release", async () => {
+  let now = 0;
+  globalThis.caches = { default: createCache(() => now) };
+  const env = createEnv();
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return fetches === 1
+      ? Response.json(release("v1.2.3"))
+      : new Response("rate limited", { status: 403 });
+  };
+
+  const firstCtx = createContext();
+  await worker.fetch(request("/install.sh"), env, firstCtx);
+  await settle(firstCtx);
+
+  now += 11 * 60 * 1000;
+  const secondCtx = createContext();
+  await worker.fetch(request("/install.sh"), env, secondCtx);
+  await settle(secondCtx);
+
+  assert.equal(fetches, 2);
+  assert.deepEqual(
+    env.termp_feedback.writes.map(({ values }) => values[1]),
+    ["v1.2.3", "v1.2.3"]
+  );
+});
+
+test("keeps the unreleased install fallback without a last-known-good release", async () => {
+  const env = createEnv();
+  globalThis.fetch = async () =>
+    new Response("rate limited", { status: 403 });
+
+  const ctx = createContext();
+  await worker.fetch(request("/install.sh"), env, ctx);
+  await settle(ctx);
+
+  assert.equal(env.termp_feedback.writes.length, 1);
+  assert.equal(env.termp_feedback.writes[0].values[1], "unreleased");
+});
+
+test("records unreleased on a genuine 404 even with a last-known-good release", async () => {
+  let now = 0;
+  globalThis.caches = { default: createCache(() => now) };
+  const env = createEnv();
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    return fetches === 1
+      ? Response.json(release("v1.2.3"))
+      : new Response("missing", { status: 404 });
+  };
+
+  const firstCtx = createContext();
+  await worker.fetch(request("/install.sh"), env, firstCtx);
+  await settle(firstCtx);
+
+  now += 11 * 60 * 1000;
+  const secondCtx = createContext();
+  await worker.fetch(request("/install.sh"), env, secondCtx);
+  await settle(secondCtx);
+
+  assert.deepEqual(
+    env.termp_feedback.writes.map(({ values }) => values[1]),
+    ["v1.2.3", "unreleased"]
+  );
+});
+
 test("counts a published explicit version even when it is not latest", async () => {
   const env = createEnv();
   const ctx = createContext();
@@ -340,7 +477,7 @@ test("reuses a cached rejection without counting the tag", async () => {
   assert.equal(cached.headers.get("Cache-Control"), "public, max-age=60");
 });
 
-test("briefly caches a transient GitHub failure", async () => {
+test("caches a transient GitHub failure for five minutes", async () => {
   const env = createEnv();
   let fetches = 0;
   globalThis.fetch = async () => {
@@ -362,7 +499,7 @@ test("briefly caches a transient GitHub failure", async () => {
   assert.equal(env.termp_feedback.writes.length, 0);
   const cached = [...globalThis.caches.default.entries.values()][0];
   assert.equal(await cached.text(), "transient-error");
-  assert.equal(cached.headers.get("Cache-Control"), "public, max-age=15");
+  assert.equal(cached.headers.get("Cache-Control"), "public, max-age=300");
 });
 
 test("still refuses published prereleases and drafts", async () => {
@@ -488,9 +625,11 @@ async function runScheduled(env) {
 
 test("scheduled snapshot records the full stable-release download total", async () => {
   const env = createEnv();
+  env.GITHUB_TOKEN = "test-token";
   const requested = [];
-  globalThis.fetch = async (url) => {
+  globalThis.fetch = async (url, init) => {
     requested.push(String(url));
+    assert.equal(init.headers.Authorization, "Bearer test-token");
     return Response.json([
       release("v1.0.0", { assets: [...COUNTED_ASSETS, ...IGNORED_ASSETS] }),
       release("v2.0.0-rc.1", {
