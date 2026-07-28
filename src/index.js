@@ -21,11 +21,14 @@ const RELEASE_ASSET_NAME_PATTERN = /^termp_[^_]+_[^_]+_[^_]+\.(tar\.gz|zip|deb|r
 const LATEST_RELEASE_CACHE_KEY =
   "https://termp.polter.sh/__termp_internal/latest-release-version";
 const LATEST_RELEASE_CACHE_TTL_SECONDS = 10 * 60;
+const LAST_KNOWN_GOOD_RELEASE_CACHE_KEY =
+  "https://termp.polter.sh/__termp_internal/last-known-good-release-version";
+const LAST_KNOWN_GOOD_RELEASE_CACHE_TTL_SECONDS = 30 * 24 * 60 * 60;
 const RELEASE_VERIFICATION_CACHE_KEY_PREFIX =
   "https://termp.polter.sh/__termp_internal/verified-release-tag/";
 const VERIFIED_RELEASE_CACHE_TTL_SECONDS = 6 * 60 * 60;
 const REJECTED_RELEASE_CACHE_TTL_SECONDS = 60;
-const TRANSIENT_RELEASE_CACHE_TTL_SECONDS = 15;
+const TRANSIENT_RELEASE_CACHE_TTL_SECONDS = 5 * 60;
 const UNRELEASED_VERSION = "unreleased";
 const UNRELEASED_CACHE_TTL_SECONDS = 30;
 const RELEASE_TAG_PATTERN = /^[0-9A-Za-z.+-]+$/;
@@ -356,6 +359,34 @@ function isDownloadClient(channel, userAgent) {
     : isScriptClient(userAgent);
 }
 
+function githubApiHeaders(userAgent, token) {
+  const headers = {
+    "Accept": "application/vnd.github+json",
+    "User-Agent": userAgent
+  };
+
+  if (typeof token === "string" && token.length > 0) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+}
+
+async function cacheLastKnownGoodVersion(cache, version) {
+  const response = new Response(version, {
+    headers: {
+      "Cache-Control": `public, max-age=${LAST_KNOWN_GOOD_RELEASE_CACHE_TTL_SECONDS}`,
+      "Content-Type": "text/plain; charset=utf-8"
+    }
+  });
+
+  try {
+    await cache.put(LAST_KNOWN_GOOD_RELEASE_CACHE_KEY, response);
+  } catch (error) {
+    console.error("Failed to cache the last-known-good release version.", error);
+  }
+}
+
 async function cacheLatestVersion(cache, version) {
   const ttl =
     version === UNRELEASED_VERSION
@@ -372,6 +403,10 @@ async function cacheLatestVersion(cache, version) {
     await cache.put(LATEST_RELEASE_CACHE_KEY, response);
   } catch (error) {
     console.error("Failed to cache the latest release version.", error);
+  }
+
+  if (version !== UNRELEASED_VERSION) {
+    await cacheLastKnownGoodVersion(cache, version);
   }
 }
 
@@ -396,7 +431,23 @@ function isPublishedNonPrereleaseRelease(release, expectedTag) {
   );
 }
 
-async function resolveLatestVersion() {
+async function readLastKnownGoodVersion(cache) {
+  try {
+    const cached = await cache.match(LAST_KNOWN_GOOD_RELEASE_CACHE_KEY);
+    if (!cached) return null;
+
+    const version = await cached.text();
+    if (isValidReleaseTag(version)) return version;
+
+    console.error("Ignoring an invalid cached last-known-good release version.");
+  } catch (error) {
+    console.error("Failed to read the last-known-good release version cache.", error);
+  }
+
+  return null;
+}
+
+async function resolveLatestVersion(githubToken, useLastKnownGoodOnFailure = false) {
   const cache = caches.default;
 
   try {
@@ -418,10 +469,7 @@ async function resolveLatestVersion() {
 
   try {
     const response = await fetch(LATEST_RELEASE_URL, {
-      headers: {
-        "Accept": "application/vnd.github+json",
-        "User-Agent": "termp-web-install-counter"
-      }
+      headers: githubApiHeaders("termp-web-install-counter", githubToken)
     });
 
     if (response.ok) {
@@ -445,7 +493,15 @@ async function resolveLatestVersion() {
 
     console.error(`Latest GitHub release lookup returned HTTP ${response.status}.`);
   } catch (error) {
-    console.error("Latest GitHub release lookup failed.", error);
+    console.error(
+      "Latest GitHub release lookup failed.",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+
+  if (useLastKnownGoodOnFailure) {
+    const lastKnownGoodVersion = await readLastKnownGoodVersion(cache);
+    if (lastKnownGoodVersion) return lastKnownGoodVersion;
   }
 
   return UNRELEASED_VERSION;
@@ -475,15 +531,12 @@ async function cacheReleaseVerification(cache, version, result) {
   }
 }
 
-async function lookupPublishedRelease(cache, version) {
+async function lookupPublishedRelease(cache, version, githubToken) {
   try {
     const response = await fetch(
       `https://api.github.com/repos/polter-dev/discord_terminal_presence/releases/tags/${encodeURIComponent(version)}`,
       {
-        headers: {
-          "Accept": "application/vnd.github+json",
-          "User-Agent": "termp-web-download-counter"
-        }
+        headers: githubApiHeaders("termp-web-download-counter", githubToken)
       }
     );
 
@@ -501,14 +554,17 @@ async function lookupPublishedRelease(cache, version) {
 
     console.error(`GitHub release-tag lookup returned HTTP ${response.status}.`);
   } catch (error) {
-    console.error("GitHub release-tag lookup failed.", error);
+    console.error(
+      "GitHub release-tag lookup failed.",
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   await cacheReleaseVerification(cache, version, "transient-error");
   return false;
 }
 
-async function isVerifiedPublishedRelease(version) {
+async function isVerifiedPublishedRelease(version, githubToken) {
   const cache = caches.default;
   const cacheKey =
     `${RELEASE_VERIFICATION_CACHE_KEY_PREFIX}${encodeURIComponent(version)}`;
@@ -528,7 +584,7 @@ async function isVerifiedPublishedRelease(version) {
   const pendingLookup = releaseVerificationLookups.get(version);
   if (pendingLookup) return pendingLookup;
 
-  const lookup = lookupPublishedRelease(cache, version);
+  const lookup = lookupPublishedRelease(cache, version, githubToken);
   releaseVerificationLookups.set(version, lookup);
 
   try {
@@ -569,7 +625,7 @@ async function countInstallFetch(request, env) {
     ) return;
 
     const day = new Date().toISOString().slice(0, 10);
-    const version = await resolveLatestVersion();
+    const version = await resolveLatestVersion(env.GITHUB_TOKEN, true);
 
     await env.termp_feedback
       .prepare(
@@ -629,7 +685,7 @@ async function countVerifiedExplicitDownload(
         "Download request"
       ))
     ) return;
-    if (!(await isVerifiedPublishedRelease(version))) return;
+    if (!(await isVerifiedPublishedRelease(version, env.GITHUB_TOKEN))) return;
 
     await recordDownloadRequest(env, version, channel, os, arch);
   } catch (error) {
@@ -686,7 +742,9 @@ async function handleDownload(request, env, ctx, pathname) {
     });
   }
 
-  const version = hasExplicitVersion ? explicitVersion : await resolveLatestVersion();
+  const version = hasExplicitVersion
+    ? explicitVersion
+    : await resolveLatestVersion(env.GITHUB_TOKEN);
   if (!hasExplicitVersion && version === UNRELEASED_VERSION) {
     return new Response(request.method === "HEAD" ? null : "No release available.", {
       status: 503,
@@ -754,7 +812,7 @@ function countedAssetDownloads(release) {
 // Returns { total, latestTag } only when every page was fetched and validated.
 // Throws on any failure — a partial or unverified total must never be recorded,
 // because a fake datapoint (especially a fake 0) would poison the history forever.
-async function fetchGithubDownloadTotal() {
+async function fetchGithubDownloadTotal(githubToken) {
   let total = 0;
   let latestTag = null;
   let latestPublishedAt = "";
@@ -767,10 +825,7 @@ async function fetchGithubDownloadTotal() {
     const response = await fetch(
       `${RELEASES_LIST_URL}?per_page=${RELEASES_PAGE_SIZE}&page=${page}`,
       {
-        headers: {
-          "Accept": "application/vnd.github+json",
-          "User-Agent": "termp-web-download-snapshot"
-        }
+        headers: githubApiHeaders("termp-web-download-snapshot", githubToken)
       }
     );
 
@@ -806,10 +861,13 @@ async function recordGithubDownloadSnapshot(env) {
   let snapshot;
 
   try {
-    snapshot = await fetchGithubDownloadTotal();
+    snapshot = await fetchGithubDownloadTotal(env.GITHUB_TOKEN);
   } catch (error) {
     // CRITICAL: write nothing on failure. A gap is honest; a fake 0 is not.
-    console.error("Skipped the GitHub download snapshot; nothing was written.", error);
+    console.error(
+      "Skipped the GitHub download snapshot; nothing was written.",
+      error instanceof Error ? error.message : String(error)
+    );
     return;
   }
 

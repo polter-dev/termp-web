@@ -79,8 +79,9 @@ returns the same response headers without a body. The source file lives outside
 Eligible GETs from script clients such as curl, wget, and fetch increment the D1
 `installs` table by UTC day and version. The Worker resolves the current GitHub
 latest-release tag server-side and caches it for about 10 minutes; if no release
-exists or GitHub cannot be reached, it records `unreleased`. HEAD requests,
-browsers, and obvious crawlers are not counted.
+exists, it records `unreleased`. If GitHub cannot be reached, it uses a cached
+last-known-good release tag when one is available and otherwise records
+`unreleased`. HEAD requests, browsers, and obvious crawlers are not counted.
 
 This is intentionally aggregate-only measurement. The table stores only
 `day`, `version`, and `count`; it does not store IP addresses, User-Agent strings,
@@ -102,3 +103,15 @@ excluded. Explicit versions are counted only after GitHub confirms that the tag
 belongs to a published, non-prerelease release. Install-script requests and
 download requests use separate per-IP rate-limit budgets, and the aggregate
 tables never store those IP addresses.
+
+## GitHub API authentication
+
+The Worker uses a GitHub token for its release API requests when the optional
+`GITHUB_TOKEN` secret is configured:
+
+```sh
+npx wrangler secret put GITHUB_TOKEN
+```
+
+Without the secret, the same requests are sent without an `Authorization`
+header, preserving the unauthenticated fallback behavior.
