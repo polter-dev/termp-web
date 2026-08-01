@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>termp — your terminal, as Discord Rich Presence</title>
-<meta name="description" content="termp shows what you're running in your terminal — Claude Code, vim, lazygit — as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
+<title>termp: your terminal, as Discord Rich Presence</title>
+<meta name="description" content="termp shows what you're running in your terminal (Claude Code, vim, lazygit) as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
 <link rel="canonical" href="https://termp.polter.sh/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="termp">
-<meta property="og:title" content="termp — your terminal, as Discord Rich Presence">
-<meta property="og:description" content="termp shows what you're running in your terminal — Claude Code, vim, lazygit — as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
+<meta property="og:title" content="termp: your terminal, as Discord Rich Presence">
+<meta property="og:description" content="termp shows what you're running in your terminal (Claude Code, vim, lazygit) as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
 <meta property="og:url" content="https://termp.polter.sh/">
 <meta property="og:image" content="https://termp.polter.sh/og.png?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="termp — Discord Rich Presence for your terminal">
+<meta property="og:image:alt" content="termp: Discord Rich Presence for your terminal">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="termp — your terminal, as Discord Rich Presence">
-<meta name="twitter:description" content="termp shows what you're running in your terminal — Claude Code, vim, lazygit — as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
+<meta name="twitter:title" content="termp: your terminal, as Discord Rich Presence">
+<meta name="twitter:description" content="termp shows what you're running in your terminal (Claude Code, vim, lazygit) as Discord Rich Presence. 48 tools out of the box. No bot token, no telemetry.">
 <meta name="twitter:image" content="https://termp.polter.sh/og.png?v=2">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
@@ -50,7 +50,30 @@
   .tool-logo-tile img { display: block; width: 24px; height: 24px; object-fit: contain; }
   textarea::placeholder { color: #3c3c44; }
   :focus-visible { outline: 2px solid #ab93ed; outline-offset: 2px; border-radius: 2px; }
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } .tool-float { animation: none !important; opacity: 0.82; transform: none; will-change: auto; } }
+  /* faq: two-column master/detail. all questions stay visible; the answer opens
+     in the right panel so the question list never scrolls. */
+  @keyframes faqreveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .faq-wrap { display: flex; gap: 22px; height: 100%; min-height: 0; }
+  .faq-menu { flex: 0 0 clamp(340px, 55%, 470px); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .faq-hint { color: #55555e; font-size: 11px; padding: 0 8px 6px; flex-shrink: 0; }
+  .faq-list { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow-y: auto; }
+  .faq-q { display: flex; align-items: baseline; gap: 9px; padding: 4px 8px; cursor: pointer; font-size: 13px; line-height: 1.45; border-radius: 5px; transition: background 0.16s ease, color 0.16s ease; }
+  .faq-q .tree { flex-shrink: 0; user-select: none; }
+  .faq-q .qtext { flex: 1; min-width: 0; }
+  .faq-detail { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid #16161a; padding-left: 20px; }
+  .fd-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
+  .fd-panel { animation: faqreveal 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .fd-q { color: #e8e8ee; font-size: 14px; font-weight: 600; line-height: 1.5; margin-bottom: 11px; display: flex; gap: 9px; }
+  .fd-q .mark { color: #ab93ed; flex-shrink: 0; }
+  .fd-a { color: #8a8a94; font-size: 13.5px; line-height: 1.8; overflow-wrap: anywhere; }
+  .fd-a b, .fd-a strong { color: #b8b8c2; font-weight: 600; }
+  .fd-a code { color: #c8c8d2; background: #0c0c0f; border: 1px solid #1e1e24; border-radius: 4px; padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; white-space: nowrap; }
+  .fd-a .muted { color: #55555e; }
+  .fd-empty { color: #45454e; font-size: 13px; line-height: 1.75; }
+  .faq-stuck { margin-top: 8px; padding-top: 8px; border-top: 1px solid #16161a; color: #55555e; font-size: 12px; flex-shrink: 0; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; } .tool-float { animation: none !important; opacity: 0.82; transform: none; will-change: auto; } .fd-panel { animation: none; } }
+  /* stack the two faq columns only when the viewport is genuinely narrow or short */
+  @media (max-width: 720px), (max-height: 640px) { .faq-wrap { flex-direction: column; gap: 12px; height: auto; } .faq-menu { flex: 0 0 auto; } .faq-list { overflow: visible; } .faq-detail { border-left: none; border-top: 1px solid #16161a; padding-left: 0; padding-top: 12px; } }
   @media (max-width: 600px) { .term-body { padding: 28px 18px !important; overflow-y: auto !important; } }
 </style>
 </helmet>
@@ -71,7 +94,7 @@
         <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
         <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
         <span style="width: 12px; height: 12px; border-radius: 50%; background: #2c2c34;"></span>
-        <span style="flex: 1; text-align: center; color: #55555e; font-size: 12px;">termp — zsh</span>
+        <span style="flex: 1; text-align: center; color: #55555e; font-size: 12px;">termp · zsh</span>
         <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="color: #45454e; font-family: 'JetBrains Mono', monospace; font-size: 12px; transition: color 0.2s;" style-hover="color: #b8b8c2;">github ↗</a>
         <button onClick="{{ replay }}" style="background: none; border: none; color: #45454e; font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; transition: color 0.2s;" style-hover="color: #b8b8c2;">↻ replay</button>
       </div>
@@ -83,12 +106,13 @@
           <div onClick="{{ sel2 }}" tabindex="0" role="button" aria-label="install" data-row="2" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg2 }}; color: {{ fg2 }};"><span>[3]</span><span>install</span></div>
           <div onClick="{{ sel3 }}" tabindex="0" role="button" aria-label="leave-feedback" data-row="3" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg3 }}; color: {{ fg3 }};"><span>[4]</span><span>leave-feedback</span></div>
           <div onClick="{{ sel4 }}" tabindex="0" role="button" aria-label="supported-tools" data-row="4" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg4 }}; color: {{ fg4 }};"><span>[5]</span><span>supported-tools</span></div>
-          <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.2s, color 0.2s; background: transparent; color: #7a7a86;" style-hover="background: #0e0e11; color: #c8c8d2;"><span>[6]</span><span>source -&gt;</span></a>
+          <div onClick="{{ sel5 }}" tabindex="0" role="button" aria-label="faq" data-row="5" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.25s ease, color 0.25s ease; background: {{ bg5 }}; color: {{ fg5 }};"><span>[6]</span><span>faq</span></div>
+          <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer" style="cursor: pointer; padding: 5px 12px; display: flex; gap: 18px; transition: background 0.2s, color 0.2s; background: transparent; color: #7a7a86;" style-hover="background: #0e0e11; color: #c8c8d2;"><span>[7]</span><span>source -&gt;</span></a>
         </div>
         <div style="flex: 1; border-top: 1px solid #16161a; padding-top: 22px;">
           <sc-if value="{{ isSel0 }}" hint-placeholder-val="{{ true }}">
             <div style="animation: {{ contentAnim }}; color: #8a8a94; font-size: 14px; line-height: 1.85; max-width: 640px;">
-              <span style="color: #b8b8c2;">termp</span> shows what you're running in your terminal as Discord Rich Presence — like "playing a game", but it's Claude Code, vim, or lazygit. 48 tools detected out of the box, custom ones via config. Logo, elapsed timer, optional cwd.
+              <span style="color: #b8b8c2;">termp</span> shows what you're running in your terminal as Discord Rich Presence. It's like "playing a game", except it's Claude Code, vim, or lazygit. 48 tools detected out of the box, custom ones via config. Logo, elapsed timer, optional cwd.
             </div>
             <div style="animation: {{ contentAnim }}; margin: 24px auto 0; width: 100%; max-width: 640px; display: flex; align-items: stretch; justify-content: center; flex-wrap: wrap; gap: 12px; box-sizing: border-box;">
               <div style="position: relative; flex: 1 1 360px; min-width: 0; max-width: 440px; padding: 17px 18px 19px; background: #111214; border: 1px solid #292a30; border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,0.34); box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column;">
@@ -140,13 +164,13 @@
               <span style="color: #55555e; font-size: 13px;"># install the latest release, then run setup</span>
               <div style="display: flex; flex-direction: column; border-left: {{ macBorder }}; padding-left: 12px;"><span style="color: #55555e;"># macOS<span style="color: #ab93ed;">{{ macDetected }}</span></span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">brew install --cask polter-dev/tap/termp</span><span style="display: inline-block; width: 8px; height: 15px; background: #3c3c44; margin-left: 8px; vertical-align: -2px; animation: blink 1.1s steps(1) infinite;"></span></span><button onClick="{{ copyMac }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyMacLabel }}</button></span></div>
               <div style="display: flex; flex-direction: column; border-left: {{ linuxBorder }}; padding-left: 12px;"><span style="color: #55555e;"># linux<span style="color: #ab93ed;">{{ linuxDetected }}</span></span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">$ <span style="color: #c8c8d2;">curl -fsSL https://termp.polter.sh/install.sh | sh</span></span><button onClick="{{ copyLinux }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyLinuxLabel }}</button></span></div>
-              <div style="display: flex; flex-direction: column; border-left: {{ windowsBorder }}; padding-left: 12px;"><span style="color: #55555e;"># windows<span style="color: #ab93ed;">{{ windowsDetected }}</span></span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">&gt; <span style="color: #c8c8d2;">scoop bucket add polter-dev https://github.com/polter-dev/scoop-bucket; scoop install termp</span></span><button onClick="{{ copyWindows }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyWindowsLabel }}</button></span></div>
-              <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px; padding: 14px 16px; background: rgba(171,147,237,0.07); border: 1px solid #3a334d; border-left: 3px solid #ab93ed; border-radius: 7px; box-shadow: 0 10px 28px rgba(0,0,0,0.22);"><span style="color: #e8e8ee; font-size: 13px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere;">One more step — run the setup wizard:</span><span style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1 1 180px; min-width: 0; color: #ab93ed; font-size: 16px; font-weight: 500;">$ <span style="color: #e8e8ee;">termp setup</span></span><button onClick="{{ copySetup }}" style="flex: 0 0 auto; min-width: 76px; background: #e8e8ee; border: 1px solid #e8e8ee; border-radius: 5px; color: #0a0a0c; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; line-height: 1; padding: 7px 12px; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color 0.2s;" style-hover="background: #ffffff; border-color: #ffffff; transform: translateY(-1px);" style-active="transform: translateY(1px);">{{ copySetupLabel }}</button></span></div>
+              <div style="display: flex; flex-direction: column; border-left: {{ windowsBorder }}; padding-left: 12px;"><span style="color: #55555e;"># windows<span style="color: #ab93ed;">{{ windowsDetected }}</span></span><span style="display: flex; align-items: center; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1; min-width: 0;">&gt; <span style="color: #c8c8d2;">scoop bucket add polter-dev https://github.com/polter-dev/scoop-bucket; scoop install termp</span></span><button onClick="{{ copyWindows }}" style="flex-shrink: 0; width: 76px; background: #0c0c0f; border: 1px solid #26262c; border-radius: 5px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1; padding: 6px 0; cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;" style-hover="color: #c8c8d2; border-color: #3c3c44; background: #0e0e11;" style-active="transform: translateY(1px);">{{ copyWindowsLabel }}</button></span><span style="margin-top: 6px; padding-left: 14px; color: #55555e; font-size: 12px;">new to Scoop? <a href="https://scoop.sh" target="_blank" rel="noopener noreferrer">60-second setup →</a></span></div>
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px; padding: 14px 16px; background: rgba(171,147,237,0.07); border: 1px solid #3a334d; border-left: 3px solid #ab93ed; border-radius: 7px; box-shadow: 0 10px 28px rgba(0,0,0,0.22);"><span style="color: #e8e8ee; font-size: 13px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere;">One more step. Run the setup wizard:</span><span style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;"><span style="overflow-wrap: anywhere; flex: 1 1 180px; min-width: 0; color: #ab93ed; font-size: 16px; font-weight: 500;">$ <span style="color: #e8e8ee;">termp setup</span></span><button onClick="{{ copySetup }}" style="flex: 0 0 auto; min-width: 76px; background: #e8e8ee; border: 1px solid #e8e8ee; border-radius: 5px; color: #0a0a0c; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; line-height: 1; padding: 7px 12px; cursor: pointer; transition: transform 0.2s, background 0.2s, border-color 0.2s;" style-hover="background: #ffffff; border-color: #ffffff; transform: translateY(-1px);" style-active="transform: translateY(1px);">{{ copySetupLabel }}</button></span></div>
             </div>
           </sc-if>
           <sc-if value="{{ isSel4 }}" hint-placeholder-val="{{ false }}">
             <div style="animation: {{ contentAnim }}; display: flex; flex-direction: column; gap: 12px;">
-              <span style="color: #8a8a94; font-size: 14px; line-height: 1.75;"><span style="color: #b8b8c2;">48 tools</span> detected out of the box — and any tool you add.</span>
+              <span style="color: #8a8a94; font-size: 14px; line-height: 1.75;"><span style="color: #b8b8c2;">48 tools</span> detected out of the box, plus any tool you add.</span>
               <div role="region" aria-label="supported tools" style="position: relative; width: 100%; height: clamp(250px, 38vh, 350px); overflow: hidden; border: 1px solid #202026; border-radius: 10px; background: radial-gradient(circle at 48% 46%, rgba(171,147,237,0.055), transparent 48%), #0a0a0c; box-sizing: border-box;">
                 <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;">{{ supportedToolNames }}</span>
                 <div aria-hidden="true">
@@ -167,7 +191,7 @@
           <sc-if value="{{ isSel3 }}" hint-placeholder-val="{{ false }}">
             <div style="animation: {{ contentAnim }}; display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
               <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
-                <span style="color: #55555e; font-size: 13px;"># tell me what you think — bugs, ideas, tools i should detect</span>
+                <span style="color: #55555e; font-size: 13px;"># tell me what you think: bugs, ideas, tools i should detect</span>
                 <textarea value="{{ feedbackText }}" onChange="{{ typeFeedback }}" placeholder="type here..." rows="5" maxLength="5000" style="background: #0c0c0f; border: 1px solid #1e1e24; border-radius: 6px; padding: 12px 14px; color: #c8c8d2; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; resize: vertical; outline: none;"></textarea>
                 <sc-if value="{{ hasFeedbackError }}" hint-placeholder-val="{{ false }}">
                   <span style="color: #d47a82; font-size: 12px;">{{ feedbackError }}</span>
@@ -176,9 +200,48 @@
                 <button onClick="{{ sendFeedback }}" disabled="{{ feedbackPending }}" style="align-self: flex-start; background: #e8e8ee; border: none; border-radius: 6px; color: #0a0a0c; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; padding: 8px 20px; cursor: {{ feedbackCursor }}; opacity: {{ feedbackOpacity }}; transition: transform 0.2s, opacity 0.2s;" style-hover="transform: translateY(-1px);" style-active="transform: translateY(1px);">{{ sendFeedbackLabel }}</button>
               </sc-if>
               <sc-if value="{{ sent }}" hint-placeholder-val="{{ false }}">
-                <span style="color: #4c8a5c; font-size: 14px;">✓ sent — thanks for the feedback</span>
+                <span style="color: #4c8a5c; font-size: 14px;">✓ sent, thanks for the feedback</span>
                 <button onClick="{{ resetFeedback }}" style="align-self: flex-start; background: none; border: 1px solid #26262c; border-radius: 6px; color: #6e6e78; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 6px 14px; cursor: pointer; transition: color 0.2s, border-color 0.2s;" style-hover="color: #b8b8c2; border-color: #3c3c44;">write another</button>
               </sc-if>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isSel5 }}" hint-placeholder-val="{{ false }}">
+            <div style="animation: {{ faqAnim }}; height: 100%;">
+              <div class="faq-wrap">
+                <div class="faq-menu">
+                  <div class="faq-hint"># click a question, or focus one and press ⏎ / space</div>
+                  <div class="faq-list" role="list">
+                    <div onClick="{{ faqSel0 }}" onKeyDown="{{ faqKey0 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp0 }}" data-faq="0" class="faq-q" style="background: {{ faqBg0 }}; color: {{ faqFg0 }};"><span class="tree" style="color: {{ faqTree0 }};">├─</span><span class="qtext">What is Terminal Presence?</span></div>
+                    <div onClick="{{ faqSel1 }}" onKeyDown="{{ faqKey1 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp1 }}" data-faq="1" class="faq-q" style="background: {{ faqBg1 }}; color: {{ faqFg1 }};"><span class="tree" style="color: {{ faqTree1 }};">├─</span><span class="qtext">What does it share to Discord, and what does it NOT share?</span></div>
+                    <div onClick="{{ faqSel2 }}" onKeyDown="{{ faqKey2 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp2 }}" data-faq="2" class="faq-q" style="background: {{ faqBg2 }}; color: {{ faqFg2 }};"><span class="tree" style="color: {{ faqTree2 }};">├─</span><span class="qtext">Is it free? Is it open source?</span></div>
+                    <div onClick="{{ faqSel3 }}" onKeyDown="{{ faqKey3 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp3 }}" data-faq="3" class="faq-q" style="background: {{ faqBg3 }}; color: {{ faqFg3 }};"><span class="tree" style="color: {{ faqTree3 }};">├─</span><span class="qtext">How do I install it?</span></div>
+                    <div onClick="{{ faqSel4 }}" onKeyDown="{{ faqKey4 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp4 }}" data-faq="4" class="faq-q" style="background: {{ faqBg4 }}; color: {{ faqFg4 }};"><span class="tree" style="color: {{ faqTree4 }};">├─</span><span class="qtext">Do I need a Discord bot or an API token?</span></div>
+                    <div onClick="{{ faqSel5 }}" onKeyDown="{{ faqKey5 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp5 }}" data-faq="5" class="faq-q" style="background: {{ faqBg5 }}; color: {{ faqFg5 }};"><span class="tree" style="color: {{ faqTree5 }};">├─</span><span class="qtext">How do I get it to show a tool it didn't recognize?</span></div>
+                    <div onClick="{{ faqSel6 }}" onKeyDown="{{ faqKey6 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp6 }}" data-faq="6" class="faq-q" style="background: {{ faqBg6 }}; color: {{ faqFg6 }};"><span class="tree" style="color: {{ faqTree6 }};">├─</span><span class="qtext">How do I pause, turn it off, or uninstall it?</span></div>
+                    <div onClick="{{ faqSel7 }}" onKeyDown="{{ faqKey7 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp7 }}" data-faq="7" class="faq-q" style="background: {{ faqBg7 }}; color: {{ faqFg7 }};"><span class="tree" style="color: {{ faqTree7 }};">├─</span><span class="qtext">Does it start automatically when I log in? Can I turn that off?</span></div>
+                    <div onClick="{{ faqSel8 }}" onKeyDown="{{ faqKey8 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp8 }}" data-faq="8" class="faq-q" style="background: {{ faqBg8 }}; color: {{ faqFg8 }};"><span class="tree" style="color: {{ faqTree8 }};">├─</span><span class="qtext">Does Discord have to be running? Does browser Discord work?</span></div>
+                    <div onClick="{{ faqSel9 }}" onKeyDown="{{ faqKey9 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp9 }}" data-faq="9" class="faq-q" style="background: {{ faqBg9 }}; color: {{ faqFg9 }};"><span class="tree" style="color: {{ faqTree9 }};">├─</span><span class="qtext">It checks for updates. Is that phoning home or tracking me?</span></div>
+                    <div onClick="{{ faqSel10 }}" onKeyDown="{{ faqKey10 }}" tabindex="0" role="button" aria-controls="faq-detail" aria-expanded="{{ faqExp10 }}" data-faq="10" class="faq-q" style="background: {{ faqBg10 }}; color: {{ faqFg10 }};"><span class="tree" style="color: {{ faqTree10 }};">└─</span><span class="qtext">My status isn't showing up. What should I check?</span></div>
+                  </div>
+                </div>
+                <div class="faq-detail">
+                  <div class="fd-scroll" id="faq-detail" aria-live="polite">
+                    <sc-if value="{{ faqNone }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-empty">Pick a question on the left to read the answer. Click one, or focus it and press Enter or Space.</div></div></sc-if>
+                    <sc-if value="{{ isFaq0 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>What is Terminal Presence?</span></div><div class="fd-a">Shows the terminal tool you're using right now on your Discord profile, like games show "Playing...". Runs quietly on your own computer.</div></div></sc-if>
+                    <sc-if value="{{ isFaq1 }}" hint-placeholder-val="{{ true }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>What does it share to Discord, and what does it NOT share?</span></div><div class="fd-a">Only the tool's name (plus an elapsed timer and its logo). <b>Never your files, keystrokes, or commands.</b> Your folder name is hidden by default and only shows if you turn it on. Even then, you can show just the folder name and not the full path. There is no tracking and no telemetry; it is sent locally to the Discord app on your computer.</div></div></sc-if>
+                    <sc-if value="{{ isFaq2 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>Is it free? Is it open source?</span></div><div class="fd-a">Yes to both. It is <b>MIT-licensed</b>, with the full source public on GitHub.</div></div></sc-if>
+                    <sc-if value="{{ isFaq3 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>How do I install it?</span></div><div class="fd-a"><b>macOS:</b> <code>brew install --cask polter-dev/tap/termp</code><br><b>Linux:</b> <code>curl -fsSL https://termp.polter.sh/install.sh | sh</code><br><b>Windows:</b> install with Scoop <span class="muted">(new to Scoop? <a href="https://scoop.sh" target="_blank" rel="noopener noreferrer">60-second setup →</a>)</span><br>Then run <code>termp setup</code> once.</div></div></sc-if>
+                    <sc-if value="{{ isFaq4 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>Do I need a Discord bot or an API token?</span></div><div class="fd-a">No. There is nothing to create, paste, or keep secret. It uses a built-in public app ID that is safe to share (it is not a password).</div></div></sc-if>
+                    <sc-if value="{{ isFaq5 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>How do I get it to show a tool it didn't recognize?</span></div><div class="fd-a">Add it to your <code>config.toml</code>. Changes are picked up instantly, with no restart needed. <b>48 tools</b> are recognized out of the box.</div></div></sc-if>
+                    <sc-if value="{{ isFaq6 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>How do I pause, turn it off, or uninstall it?</span></div><div class="fd-a"><b>Pause:</b> <code>termp disable</code> (resume with <code>termp enable</code>). <b>Stop now:</b> <code>termp stop</code>. <b>Remove start-at-login:</b> <code>termp uninstall</code>. <b>Remove everything:</b> <code>termp uninstall --all</code> (it asks first).</div></div></sc-if>
+                    <sc-if value="{{ isFaq7 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>Does it start automatically when I log in? Can I turn that off?</span></div><div class="fd-a">Only if you choose it during setup, so it stays off unless you say yes. You can pause or remove it any time.</div></div></sc-if>
+                    <sc-if value="{{ isFaq8 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>Does Discord have to be running? Does browser Discord work?</span></div><div class="fd-a">The <b>Discord desktop app</b> must be open on the same computer. The browser version will not work for this.</div></div></sc-if>
+                    <sc-if value="{{ isFaq9 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>It checks for updates. Is that phoning home or tracking me?</span></div><div class="fd-a">No. At most once a day it asks GitHub "is there a newer version?" and nothing else, so there is no ID and no usage data. It can be switched off entirely.</div></div></sc-if>
+                    <sc-if value="{{ isFaq10 }}" hint-placeholder-val="{{ false }}"><div class="fd-panel"><div class="fd-q"><span class="mark">▸</span><span>My status isn't showing up. What should I check?</span></div><div class="fd-a">Check that the Discord desktop app is running, that you ran <code>termp setup</code> and <code>termp start</code>, and that a supported tool is open. Run <code>termp watch</code> to see the card in your terminal.</div></div></sc-if>
+                  </div>
+                  <div class="faq-stuck">still stuck? <a href="https://github.com/polter-dev/discord_terminal_presence" target="_blank" rel="noopener noreferrer">→ GitHub</a></div>
+                </div>
+              </div>
             </div>
           </sc-if>
         </div>
@@ -192,7 +255,7 @@
   &quot;flareZoom&quot;: {&quot;editor&quot;: &quot;range&quot;, &quot;default&quot;: 2.4, &quot;min&quot;: 1.2, &quot;max&quot;: 4, &quot;step&quot;: 0.1, &quot;section&quot;: &quot;Transition&quot;}
 }">
 class Component extends DCLogic {
-  state = { stage: 'intro', sel: 0, dir: 1, activeTool: 0, elapsedSeconds: 0, feedback: '', feedbackPending: false, feedbackError: '', sent: false, copied: '', copyFailed: '', os: '' };
+  state = { stage: 'intro', sel: 0, dir: 1, activeTool: 0, elapsedSeconds: 0, feedback: '', feedbackPending: false, feedbackError: '', sent: false, copied: '', copyFailed: '', os: '', faqOpen: 1 };
 
   begin() {
     if (this.state.stage !== 'intro') return;
@@ -328,14 +391,14 @@ class Component extends DCLogic {
     const now = Date.now();
     // Ignore momentum/trailing events while a section change settles
     if (this._lockUntil && now < this._lockUntil) { this._acc = 0; this._wheelAt = now; return; }
-    // Reset accumulator after a pause — each gesture starts fresh
+    // Reset accumulator after a pause, so each gesture starts fresh
     if (now - (this._wheelAt || 0) > 180) this._acc = 0;
     this._wheelAt = now;
     this._acc = (this._acc || 0) + e.deltaY;
     if (Math.abs(this._acc) < 80) return;
     const dir = this._acc > 0 ? 1 : -1;
     this._acc = 0;
-    const next = Math.min(4, Math.max(0, this.state.sel + dir));
+    const next = Math.min(5, Math.max(0, this.state.sel + dir));
     if (next !== this.state.sel) {
       this._lockUntil = now + 550;
       this.setState({ sel: next, dir });
@@ -359,17 +422,27 @@ class Component extends DCLogic {
       }
       return;
     }
-    if (e.key === 'ArrowDown' || e.key === 'j') this.goTo(Math.min(4, this.state.sel + 1), 1);
+    if (e.key === 'ArrowDown' || e.key === 'j') this.goTo(Math.min(5, this.state.sel + 1), 1);
     else if (e.key === 'ArrowUp' || e.key === 'k') this.goTo(Math.max(0, this.state.sel - 1), -1);
-    else if (e.key >= '1' && e.key <= '5') this.goTo(Number(e.key) - 1, Number(e.key) - 1 > this.state.sel ? 1 : -1);
+    else if (e.key >= '1' && e.key <= '6') this.goTo(Number(e.key) - 1, Number(e.key) - 1 > this.state.sel ? 1 : -1);
+  }
+
+  toggleFaq(i) {
+    this.setState(s => ({ faqOpen: s.faqOpen === i ? -1 : i }));
+  }
+
+  onFaqKey(e, i) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    e.preventDefault();
+    this.toggleFaq(i);
   }
 
   componentDidMount() {
     this._onKey = (e) => this.onKey(e);
-    this._onHashChange = () => this.openFeedbackHash();
+    this._onHashChange = () => this.openHash();
     window.addEventListener('keydown', this._onKey);
     window.addEventListener('hashchange', this._onHashChange);
-    this.openFeedbackHash();
+    this.openHash();
     this.ensureTurnstile();
     this.detectOs();
     this.startPresenceTimer();
@@ -384,9 +457,15 @@ class Component extends DCLogic {
     this.setState({ os });
   }
 
-  openFeedbackHash() {
-    if (location.hash === '#feedback' || location.hash === '#feedback-turnstile') {
-      this.setState({ stage: 'dead', sel: 3, dir: 1 });
+  openHash() {
+    const map = {
+      '#what-it-is': 0, '#how-it-works': 1, '#install': 2,
+      '#feedback': 3, '#feedback-turnstile': 3, '#leave-feedback': 3,
+      '#supported-tools': 4, '#faq': 5
+    };
+    const sel = map[location.hash];
+    if (sel != null) {
+      this.setState(s => ({ stage: 'dead', sel, dir: sel >= s.sel ? 1 : -1 }));
     }
   }
 
@@ -472,13 +551,13 @@ class Component extends DCLogic {
     }
 
     if (!window.turnstile || typeof window.turnstile.getResponse !== 'function') {
-      this.setState({ feedbackError: 'verification check is unavailable — refresh and try again' });
+      this.setState({ feedbackError: 'verification check is unavailable. refresh and try again' });
       return;
     }
 
     this.ensureTurnstile();
     if (this._turnstileWidgetId == null) {
-      this.setState({ feedbackError: 'verification check is still loading — please try again' });
+      this.setState({ feedbackError: 'verification check is still loading. please try again' });
       return;
     }
 
@@ -486,7 +565,7 @@ class Component extends DCLogic {
     try {
       turnstileToken = window.turnstile.getResponse(this._turnstileWidgetId);
     } catch (e) {
-      this.setState({ feedbackError: 'verification check is unavailable — refresh and try again' });
+      this.setState({ feedbackError: 'verification check is unavailable. refresh and try again' });
       return;
     }
 
@@ -507,22 +586,22 @@ class Component extends DCLogic {
       const result = await response.json().catch(() => ({}));
 
       if (response.status === 429) {
-        throw new Error('too many submissions — try again in a minute');
+        throw new Error('too many submissions. try again in a minute');
       }
 
       if (response.status === 403) {
-        throw new Error('verification failed — please complete the check again');
+        throw new Error('verification failed. please complete the check again');
       }
 
       if (!response.ok || result.ok !== true) {
-        throw new Error(result.error || 'could not send feedback — please try again');
+        throw new Error(result.error || 'could not send feedback. please try again');
       }
 
       this.setState({ sent: true, feedbackPending: false, feedbackError: '' });
     } catch (error) {
       this.setState({
         feedbackPending: false,
-        feedbackError: error && error.message ? error.message : 'could not send feedback — please try again'
+        feedbackError: error && error.message ? error.message : 'could not send feedback. please try again'
       });
     } finally {
       this._feedbackPending = false;
@@ -567,7 +646,8 @@ class Component extends DCLogic {
       alsoList: secondaries.map(tool => tool.name).join(' · '),
       elapsedLabel: this.formatElapsed(this.state.elapsedSeconds),
       contentAnim: (this.state.dir >= 0 ? 'slideup' : 'slidedown') + ' 0.45s cubic-bezier(0.22, 1, 0.36, 1) both',
-      scrollHint: 'scroll, click a row, or use ↑/↓ · ' + (this.state.sel + 1) + '/5',
+      faqAnim: (this.state.dir >= 0 ? 'slideup' : 'slidedown') + ' 0.45s cubic-bezier(0.22, 1, 0.36, 1) both',
+      scrollHint: 'scroll, click a row, or use ↑/↓ · ' + (this.state.sel + 1) + '/6',
       feedbackText: this.state.feedback,
       typeFeedback: (e) => this.setState({ feedback: e.target.value, feedbackError: '' }),
       sendFeedback: () => this.sendFeedback(),
@@ -595,12 +675,23 @@ class Component extends DCLogic {
       linuxDetected: os === 'linux' ? ' ← detected' : '',
       windowsDetected: os === 'windows' ? ' ← detected' : '',
     };
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       vals['sel' + i] = () => this.goTo(i, i > this.state.sel ? 1 : -1);
       vals['isSel' + i] = this.state.sel === i;
       vals['bg' + i] = this.state.sel === i ? '#e8e8ee' : 'transparent';
       vals['fg' + i] = this.state.sel === i ? '#0a0a0c' : '#7a7a86';
     }
+    for (let i = 0; i < 11; i++) {
+      const open = this.state.faqOpen === i;
+      vals['faqSel' + i] = () => this.toggleFaq(i);
+      vals['faqKey' + i] = (e) => this.onFaqKey(e, i);
+      vals['isFaq' + i] = open;
+      vals['faqBg' + i] = open ? '#14141a' : 'transparent';
+      vals['faqFg' + i] = open ? '#e8e8ee' : '#8a8a94';
+      vals['faqTree' + i] = open ? '#ab93ed' : '#33343c';
+      vals['faqExp' + i] = open ? 'true' : 'false';
+    }
+    vals['faqNone'] = this.state.faqOpen < 0;
     for (let i = 0; i < 3; i++) {
       const tool = tools[i];
       const isActive = activeIndex === i;
